@@ -1,0 +1,145 @@
+I would like to enhance @/fortinet-web/  application so that it act as  front end application  to display information stored in my postgress database @/plan/02_database_schema_and_setup.md   using api stored in @/fortinet-api/ 
+I want to use components  in @https://ui.shadcn.com/docs/components.
+
+the front end application will only be reading  the database (no UPDATE, no Delete, no ADD) in order to display information in very user friendly and  professional manner.
+
+the layout will be shadcn/ui card based  and it will consist of :
+1 shadcn/ui sidebar on left and 1 shadcn/ui card component on the right to display content
+
+ a left Sidebar ( shadcn/ui Sidebar componnet) : that will contain these menu items :
+ -Home
+ -Firewalls
+ -Vdoms
+ -Routes
+ -Interfaces
+ -Vips
+ -Search IPs
+
+ *home view:  will use scrollable  shadcn/ui card  component ,the content will give a brief description of what the project does ( connect to devices , parse network specific information and store them in a postgres database, then that information in retrieved through api and displayed by front-end app).
+			List the features of the front end app.
+
+ *firewalls view : will use  shadcn/ui table component stack on top of  shadcn/ui card  component , table  shadcn/ui component will display the following items from  "firewalls", "vdoms" table.
+	  - fw_name 
+	  - fw_ip 
+	  - fmg_ip 
+	  - faz_ip 
+	  - vdoms (use  shadcn/ui Hover card to display list of vdoms belonging to this firewall)
+	  - last_updated 
+	  also include the following component to filter the displayed list :
+	   shadcn/ui label and  shadcn/ui Combobox components to filter on fw_name  from firewalls table, align the displayed elements in one row table, stack the  shadcn/ui table on top of  shadcn/ui card component.
+	  by default  the whole list is displayed , however use Pagination component to limit the number of displayed row to 15
+  
+ *vdoms view : will  use  shadcn/ui table component stack on top of card  component , table component will display the following items from "vdoms", "firewalls", "interfaces", "routes" table.
+         vdom_name 
+		 fw_name 
+		 interfaces (use  shadcn/ui Hover card to display list of interface_name along with their IP that belong to this vdoms)
+		 vips
+         routes (use  shadcn/ui Hover card to display list of interface_name along with their IP that belong to this vdoms)	 
+		 last_updated 
+  
+		  also include the following component to filter the displayed list :
+		   shadcn/ui label and  shadcn/ui Combobox components to filter on fw_name ,vdom_name    from "firewalls", "vdoms" table, align the displayed elements in one row table, stack the  shadcn/ui table on top of  shadcn/ui card component.
+		  by default  the whole list is displayed , however use  shadcn/ui Pagination component to limit the number of displayed row to 15
+ 
+ *routes view : will use  shadcn/ui table component stack on top of  shadcn/uicard  component , shadcn/ui  table component will display the following items from "routes", "vdoms" table.
+       route_type
+	   destination_network/mask_length
+	   gateway
+	   exit_interface_name
+	   vdom_name 
+	   last_updated 
+		also include the following component to filter the displayed list :
+		 shadcn/ui label and  shadcn/uiCombobox components to filter on vdom_name  from "vdoms" table, align the displayed elements in one row table, stack the shadcn/ui  table on top of  shadcn/ui card component.
+		by default  the whole list is displayed , however use  shadcn/ui Pagination component to limit the number of displayed row to 15
+ 
+ *interfaces view : will use  shadcn/ui table component stack on top of  shadcn/ui card component ,  shadcn/ui table component will display the following items from "interfaces", "vdoms" table
+		interface_name 
+		ip_address/mask 
+		type 
+		vdom_name
+		status (use Badge to display status red if interface down, green if it is up)
+		last_updated 
+		
+		also include the following component to filter the displayed list :
+		shadcn/ui label and shadcn/ui Combobox components to filter on vdom_name  from "vdoms" table, align the displayed elements in one row table, stack the  shadcn/ui table on top of  shadcn/ui card component.
+		by default  the whole list is displayed , however use  shadcn/ui Pagination component to limit the number of displayed row to 15	
+ 
+ *vips view : will use  shadcn/ui table component stack on top of  shadcn/ui card component ,  shadcn/ui table component will display the following items from "vips", "vdoms"  table 
+		external_ip/mask
+		external_port 
+		mapped_ip
+		mapped_port
+		vip_type
+		vdom_name
+		last_updated
+		
+		also include the following component to filter the displayed list :
+		shadcn/ui label and shadcn/ui Combobox components to filter on vdom_name  from "vdoms" table, align the displayed elements in one row table, stack the  shadcn/ui table on top of  shadcn/ui card component.
+		by default  the whole list is displayed , however use  shadcn/ui Pagination component to limit the number of displayed row to 15
+ 
+ *search ip view: will provide an IP Address Search Functionality that needs to handle various search formats:
+
+		1. Partial octet prefix (e.g., `172`) - Match all IPs starting with this prefix
+		2. Partial IP (e.g., `172.25`) - Match all IPs starting with these octets
+		3. Full IP address (e.g., `172.25.10.1`) - Match this exact IP
+		4. CIDR subnet notation (e.g., `172.25.10.0/24`) - Match all IPs in this subnet
+		5. Host with CIDR mask (e.g., `172.25.10.1/32`) - Match this specific IP with mask
+
+		****Note that search will be done accross "interfaces", "routes" , "vips"  table to find a matching IPs
+		**** "vips" table contains both external_ip and mapped_ip either of these IPs can potentially match search criteria
+
+		the search ip view will display and use the  following components :
+
+			 shadcn/uiLabel component (Search for IP:),  shadcn/ui Input component(lookup field),  shadcn/ui  Button component (search button)	in one row table , all these elements will be stack on top of  shadcn/ui card component.
+			 use  shadcn/ui tooltip on Input to display various search pattern.
+				- 3  shadcn/ui Tabs components (Interfaces, Routes, Vips) : each tab  will display a list of matched IPs
+	
+		- Interfaces tab: will list the following fields  using a  shadcn/ui table compononent stack on top of  shadcn/ui card Component
+				
+			ip_address/mask 
+			interface_name 
+			type 
+			vdom_name
+			status (use  shadcn/ui Badge to display status red if interface down, green if it is up)
+			last_updated 
+	
+		- Routes tab: will list the following fields  using a  shadcn/ui table compononent stack on top of  shadcn/ui card Component
+		
+		   destination_network/mask_length
+		   exit_interface_name
+		   route_type
+		   gateway	   
+		   vdom_name 
+		   last_updated
+	
+		- Vips tab: will list the following fields  using a  shadcn/ui table compononent stack on top of  shadcn/ui card Component
+			external_ip/mask  
+			mapped_ip
+			vip_type
+			vdom_name
+			last_updated 
+	
+	
+	
+here is a comprehensive list of shadcn/ui used (or that can be used):
+
+Breadcrumb @https://ui.shadcn.com/docs/components/breadcrumb
+Tooltip @https://ui.shadcn.com/docs/components/tooltip
+Card @https://ui.shadcn.com/docs/components/card
+Input @https://ui.shadcn.com/docs/components/input
+Popover @https://ui.shadcn.com/docs/components/popover
+
+Skeleton @https://ui.shadcn.com/docs/components/skeleton
+Button @https://ui.shadcn.com/docs/components/button
+Progress @https://ui.shadcn.com/docs/components/progress
+
+Table @https://ui.shadcn.com/docs/components/table
+Badge @https://ui.shadcn.com/docs/components/badge
+Combobox @https://ui.shadcn.com/docs/components/combobox
+Hover Card @https://ui.shadcn.com/docs/components/hover-card
+Label @https://ui.shadcn.com/docs/components/label
+Pagination @https://ui.shadcn.com/docs/components/pagination
+Sidebar @https://ui.shadcn.com/docs/components/sidebar
+Tabs  @https://ui.shadcn.com/docs/components/tabs
+
+Please provide a detailed step by step instruction to implement the solution , give as much as information, document everything and put in .md file for the sofware developper in @/fortinet-web/plan
