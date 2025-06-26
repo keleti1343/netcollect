@@ -85,7 +85,7 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
               variant="outline"
               role="combobox"
               aria-expanded={fwNameOpen}
-              className="w-[250px] justify-between"
+              className="w-[250px] justify-between shadow-sm"
               id="fw-name-filter"
             >
               {selectedFwName
@@ -158,7 +158,7 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
               variant="outline"
               role="combobox"
               aria-expanded={vdomsOpen}
-              className="w-[250px] justify-between"
+              className="w-[250px] justify-between shadow-sm"
               id="vdom-name-filter"
             >
               {isLoadingVdoms ? (
@@ -203,8 +203,19 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
       </div>
       
       <div className="flex gap-2">
-        <Button onClick={handleApplyFilter}>Apply Filter</Button>
-        <Button variant="outline" onClick={handleClearFilter}>Clear</Button>
+        <Button
+          onClick={handleApplyFilter}
+          className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
+        >
+          Apply Filter
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleClearFilter}
+          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] transition-all"
+        >
+          Clear
+        </Button>
       </div>
     </div>
   );

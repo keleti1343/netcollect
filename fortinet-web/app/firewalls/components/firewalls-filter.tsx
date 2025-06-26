@@ -107,7 +107,7 @@ const options = await Promise.all(firewalls.map(async (fw) => {
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="w-[250px] justify-between"
+              className="w-[250px] justify-between shadow-sm"
             >
               {firewallName
                 ? firewallOptions.find((option) => option.value === firewallName)?.label
@@ -171,8 +171,19 @@ const options = await Promise.all(firewalls.map(async (fw) => {
       </div>
       
       <div className="flex gap-2">
-        <Button onClick={handleApplyFilter}>Apply Filter</Button>
-        <Button variant="outline" onClick={handleClearFilter}>Clear</Button>
+        <Button
+          onClick={handleApplyFilter}
+          className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
+        >
+          Apply Filter
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleClearFilter}
+          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] transition-all"
+        >
+          Clear
+        </Button>
       </div>
     </div>
   );

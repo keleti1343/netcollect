@@ -6,6 +6,10 @@ import { VdomsFilter } from "./components/vdoms-filter";
 import { getVdoms, getFirewalls, getInterfaces, getRoutes, getVips } from "@/services/api";
 import { InterfaceResponse, RouteResponse, VIPResponse, FirewallResponse } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge"; // Import Badge
+import { Button } from "@/components/ui/button";
+import { HoverCardHeader } from "@/components/ui/hover-card-header"; // Import HoverCardHeader
+import { TableCode } from "@/components/ui/table-code"; // Import TableCode
 
 export default async function VdomsPage({
   searchParams
@@ -35,14 +39,24 @@ export default async function VdomsPage({
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">List of Vdoms</h1>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter Options</CardTitle>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Enhanced Page Header */}
+      <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
+        <h1 className="text-3xl tracking-tight">VDoms</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage virtual domains across your Fortinet devices
+        </p>
+      </div>
+      
+      {/* Enhanced Filter Card */}
+      <Card className="border shadow-md">
+        <CardHeader className="bg-muted/50 pb-3">
+          <CardTitle className="text-lg flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filter Options
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <VdomsFilter
             firewalls={firewalls}
             initialFwName={fw_name}
@@ -50,67 +64,134 @@ export default async function VdomsPage({
           />
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>VDom List</CardTitle>
-          <CardDescription>Virtual domains across firewall devices</CardDescription>
+      
+      {/* Enhanced Main Content Card */}
+      <Card className="border shadow-md">
+        <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              VDom List
+            </CardTitle>
+            <CardDescription>
+              Total: {totalCount} virtual domains
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-muted-foreground">
+              {vdoms.length > 0 ?
+                `Showing ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of ${totalCount}` :
+                'No VDom found'}
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>VDom Name</TableHead>
-                <TableHead>Firewall</TableHead>
-                <TableHead>Interfaces</TableHead>
-                <TableHead>VIPs</TableHead>
-                <TableHead>Routes</TableHead>
-                <TableHead>Last Updated</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {vdoms.map((vdom) => (
-                <TableRow key={vdom.vdom_id}>
-                  <TableCell>{vdom.vdom_name}</TableCell>
-                  <TableCell>{vdom.firewall?.fw_name || '-'}</TableCell>
-                  <TableCell>
-                    <HoverCard>
-                      <HoverCardTrigger asChild>
-                        <span className="cursor-help underline">View Interfaces</span>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-80">
-                        <InterfacesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </TableCell>
-                  <TableCell>
-                    <HoverCard>
-                      <HoverCardTrigger asChild>
-                        <span className="cursor-help underline">View VIPs</span>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-80">
-                        <VipsList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </TableCell>
-                  <TableCell>
-                    <HoverCard>
-                      <HoverCardTrigger asChild>
-                        <span className="cursor-help underline">View Routes</span>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-80">
-                        <RoutesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </TableCell>
-                  <TableCell>{new Date(vdom.last_updated).toLocaleString()}</TableCell>
+        <CardContent className="p-0">
+          <div className="overflow-auto">
+            <Table className="border-collapse">
+              <TableHeader className="bg-muted/50">
+                <TableRow className="hover:bg-muted/20">
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDom Name</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Firewall</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Interfaces</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VIPs</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Routes</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          <div className="mt-4 flex justify-center">
-            <DataPagination currentPage={page} totalPages={totalPages} />
+              </TableHeader>
+              <TableBody>
+                {vdoms.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <EmptyState title="No VDOMs Found" description="No virtual domains match your criteria. Try adjusting your filters." />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  vdoms.map((vdom) => (
+                    <TableRow key={vdom.vdom_id} className="hover:bg-muted/20 border-b">
+                      <TableCell className="font-medium">{vdom.vdom_name}</TableCell>
+                      <TableCell>
+                        {vdom.firewall?.fw_name ? (
+                          <Badge variant="placeholder">
+                            {vdom.firewall.fw_name}
+                          </Badge>
+                        ) : (
+                          <Badge variant="placeholder">
+                            -
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <HoverCard>
+                          <HoverCardTrigger asChild>
+                            <Badge variant="info" count={vdom.total_interfaces || 0} className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+                              Interfaces
+                            </Badge>
+                          </HoverCardTrigger>
+                          <HoverCardContent className="p-0">
+                            <HoverCardHeader>
+                              <h4 className="font-medium">Interfaces for {vdom.vdom_name}</h4>
+                            </HoverCardHeader>
+                            <div className="p-[var(--hover-card-content-padding)]">
+                              <InterfacesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      </TableCell>
+                      <TableCell>
+                        <HoverCard>
+                          <HoverCardTrigger asChild>
+                            <Badge variant="info" count={vdom.total_vips || 0} className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+                              VIPs
+                            </Badge>
+                          </HoverCardTrigger>
+                          <HoverCardContent className="p-0">
+                            <HoverCardHeader>
+                              <h4 className="font-medium">VIPs for {vdom.vdom_name}</h4>
+                            </HoverCardHeader>
+                            <div className="p-[var(--hover-card-content-padding)]">
+                              <VipsList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      </TableCell>
+                      <TableCell>
+                        <HoverCard>
+                          <HoverCardTrigger asChild>
+                            <Badge variant="info" count={vdom.total_routes || 0} className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+                              Routes
+                            </Badge>
+                          </HoverCardTrigger>
+                          <HoverCardContent className="p-0">
+                            <HoverCardHeader>
+                              <h4 className="font-medium">Routes for {vdom.vdom_name}</h4>
+                            </HoverCardHeader>
+                            <div className="p-[var(--hover-card-content-padding)]">
+                              <RoutesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                          <small>{new Date(vdom.last_updated).toLocaleString()}</small>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {/* Enhanced Pagination */}
+          <div className="border-t p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, totalCount)} of {totalCount} virtual domains
+              </div>
+              <DataPagination currentPage={page} totalPages={totalPages} />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -119,18 +200,16 @@ export default async function VdomsPage({
 }
 
 async function InterfacesList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
-  const interfacesResponse = await getInterfaces({ vdom_id: vdomId.toString() });
-  const interfaces = interfacesResponse.items; // Access the items array
+  const { items: interfaces } = await getInterfaces({ vdom_id: vdomId.toString() });
 
   return (
     <div className="space-y-2">
-      <h4 className="font-semibold">Interfaces for {vdomName}</h4>
       <ScrollArea className="h-[200px] w-full">
         <ul className="list-disc pl-4">
           {interfaces.length > 0 ? (
             interfaces.map((iface: InterfaceResponse) => (
               <li key={iface.interface_id}>
-                {iface.interface_name} - {iface.ip_address || 'No IP'}
+                {iface.interface_name} - <TableCode>{iface.ip_address || '-'}</TableCode>
               </li>
             ))
           ) : (
@@ -143,17 +222,16 @@ async function InterfacesList({ vdomId, vdomName }: { vdomId: number, vdomName: 
 }
 
 async function VipsList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
-  const vips = await getVips({ vdom_id: vdomId.toString() });
+  const { items: vips } = await getVips({ vdom_id: vdomId.toString() });
 
   return (
     <div className="space-y-2">
-      <h4 className="font-semibold">VIPs for {vdomName}</h4>
       <ScrollArea className="h-[200px] w-full">
         <ul className="list-disc pl-4">
           {vips.length > 0 ? (
             vips.map((vip: VIPResponse) => (
               <li key={vip.vip_id}>
-                {vip.external_ip} → {vip.mapped_ip}
+                <TableCode>{vip.external_ip}</TableCode> → <TableCode>{vip.mapped_ip}</TableCode>
               </li>
             ))
           ) : (
@@ -170,13 +248,16 @@ async function RoutesList({ vdomId, vdomName }: { vdomId: number, vdomName: stri
 
   return (
     <div className="space-y-2">
-      <h4 className="font-semibold">Routes for {vdomName}</h4>
       <ScrollArea className="h-[200px] w-full">
         <ul className="list-disc pl-4">
           {routes.length > 0 ? (
             routes.map((route: RouteResponse) => (
               <li key={route.route_id}>
-                {route.destination_network}/{route.mask_length} via {route.gateway || route.exit_interface_name}
+                <TableCode>{route.destination_network}/{route.mask_length}</TableCode> via {route.gateway ? (
+                  <TableCode>{route.gateway}</TableCode>
+                ) : (
+                  <TableCode>{route.exit_interface_name}</TableCode>
+                )}
               </li>
             ))
           ) : (

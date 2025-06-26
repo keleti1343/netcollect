@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from sqlalchemy import func # Import func
+from typing import List, Optional, Tuple # Import Tuple
 from app.models.firewall import Firewall
+from app.models.vdom import VDOM # Import VDOM model
 from app.schemas.firewall import FirewallCreate, FirewallUpdate
 
 def get_firewall(db: Session, firewall_id: int) -> Optional[Firewall]:
@@ -18,13 +20,42 @@ def get_firewalls(
     limit: int = 100,
     fw_name: Optional[str] = None
 ) -> (List[Firewall], int):
+    # Start with the base query for Firewalls
     query = db.query(Firewall)
+
+    # Apply filters for total count
     if fw_name:
         query = query.filter(Firewall.fw_name.ilike(f"%{fw_name}%"))
     
     total_count = query.count()
-    items = query.offset(skip).limit(limit).all()
-    return items, total_count
+
+    # Subquery to count VDOMs for each Firewall
+    vdom_count_subquery = (
+        db.query(func.count(VDOM.vdom_id))
+        .filter(VDOM.firewall_id == Firewall.firewall_id)
+        .scalar_subquery()
+    )
+
+    # Modify the main query to select Firewall and the VDOM count
+    query_with_count = db.query(
+        Firewall,
+        vdom_count_subquery.label("total_vdoms")
+    )
+
+    # Apply filters to this new query
+    if fw_name:
+        query_with_count = query_with_count.filter(Firewall.fw_name.ilike(f"%{fw_name}%"))
+
+    # Get paginated items
+    items_with_count = query_with_count.offset(skip).limit(limit).all()
+
+    # Reconstruct Firewall objects with total_vdoms attribute for Pydantic
+    processed_items = []
+    for firewall_obj, total_vdoms_count in items_with_count:
+        firewall_obj.total_vdoms = total_vdoms_count if total_vdoms_count is not None else 0
+        processed_items.append(firewall_obj)
+
+    return processed_items, total_count
 
 def create_firewall(db: Session, firewall: FirewallCreate) -> Firewall:
     db_firewall = Firewall(

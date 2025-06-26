@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react" // Import icons for Combobox
-import { cn } from "@/lib/utils" // Utility for class names
+import { Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
   Command,
@@ -11,52 +11,38 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command" // Combobox components
+} from "@/components/ui/command"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover" // Popover for Combobox
-import { Input } from "@/components/ui/input" // Keep Input for name/IP filter
+} from "@/components/ui/popover"
 import { Label } from "@/components/ui/label"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { VDOMResponse } from "@/types" // Import VDOMResponse
+import { VDOMResponse } from "@/types"
 
-interface InterfacesFilterProps {
-  initialName?: string;
-  initialIp?: string;
-  vdoms: VDOMResponse[]; // New prop for VDOMs
+interface VipsFilterProps {
+  vdoms: VDOMResponse[];
+  initialVdomId?: string;
 }
 
-export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFilterProps) {
+export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [filterValue, setFilterValue] = React.useState(initialName || initialIp || "");
   const [vdomOpen, setVdomOpen] = React.useState(false);
-  const [selectedVdomId, setSelectedVdomId] = React.useState(searchParams.get("vdom_id") || ""); // Get initial vdom_id from URL
+  const [selectedVdomId, setSelectedVdomId] = React.useState(initialVdomId || "");
 
   const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
-    label: `${vdom.vdom_name} (${vdom.total_interfaces || 0} Interfaces)`,
+    label: `${vdom.vdom_name} (${vdom.total_vips || 0} VIPs)`, // Display name and number of VIPs
     value: vdom.vdom_id.toString(),
   }));
 
   function handleApplyFilter() {
     const params = new URLSearchParams(searchParams);
     
-    // Clear previous name/ip filters
-    params.delete("name");
-    params.delete("ip");
     params.delete("vdom_id"); // Clear vdom_id filter
-
-    if (filterValue) {
-      if (filterValue.includes('.')) {
-        params.set("ip", filterValue);
-      } else {
-        params.set("name", filterValue);
-      }
-    }
 
     if (selectedVdomId) {
       params.set("vdom_id", selectedVdomId);
@@ -67,12 +53,9 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
   }
   
   function handleClearFilter() {
-    setFilterValue("");
-    setSelectedVdomId(""); // Clear selected VDOM
+    setSelectedVdomId("");
     const params = new URLSearchParams(searchParams);
-    params.delete("name");
-    params.delete("ip");
-    params.delete("vdom_id"); // Clear vdom_id filter
+    params.delete("vdom_id");
     params.set("page", "1");
     router.push(`${pathname}?${params.toString()}`);
   }
@@ -126,18 +109,6 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
             </Command>
           </PopoverContent>
         </Popover>
-      </div>
-
-      {/* Name/IP Filter Input */}
-      <div className="grid gap-2">
-        <Label htmlFor="interface-filter">Filter by Name or IP</Label>
-        <Input
-          id="interface-filter"
-          placeholder="Enter name or IP..."
-          value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-          className="w-[250px]"
-        />
       </div>
       
       <div className="flex gap-2">

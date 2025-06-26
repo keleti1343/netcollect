@@ -7,6 +7,7 @@ export interface FirewallResponse {
   last_updated: string;
   site?: string; // Added from types/index.ts
   vdoms?: VDOMResponse[] | null; // Optional, if sometimes included
+  total_vdoms?: number | null; // Added for VDOMs count
 }
 export interface VDOMResponse {
   firewall_id: number;
@@ -15,6 +16,9 @@ export interface VDOMResponse {
   vdom_id: number;
   last_updated: string; // Assuming datetime is serialized as string
   firewall?: FirewallResponse; // Added from types/index.ts
+  total_routes?: number | null; // Added for routes count
+  total_interfaces?: number | null; // Added for interfaces count
+  total_vips?: number | null; // Added for VIPs count
 }
 
 

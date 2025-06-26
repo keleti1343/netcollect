@@ -13,19 +13,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import { InterfaceResponse } from "@/types"
 
-// Define the shape of our data
-export type FortiInterfaceIP = {
-  id: string // Unique identifier for each row
-  ip: string
-  mask: string
-  site: string
-  vdom: string
-  interface_name: string
-  description: string
-}
-
-export const columns: ColumnDef<FortiInterfaceIP>[] = [
+export const columns: ColumnDef<InterfaceResponse>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -49,48 +41,96 @@ export const columns: ColumnDef<FortiInterfaceIP>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "ip",
+    accessorKey: "interface_name",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          IP Address
+          Name
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => <div>{row.getValue("ip")}</div>,
+    cell: ({ row }) => <div className="font-medium">{row.getValue("interface_name")}</div>,
   },
   {
-    accessorKey: "mask",
-    header: "Mask",
-    cell: ({ row }) => <div>/{row.getValue("mask")}</div>,
+    accessorKey: "ip_address",
+    header: "IP Address",
+    cell: ({ row }) => (
+      <div>
+        {row.original.ip_address ? (
+          <code className="px-2 py-1 bg-muted rounded text-sm">{row.original.ip_address}</code>
+        ) : (
+          '-'
+        )}
+      </div>
+    ),
   },
   {
-    accessorKey: "site",
-    header: "Site",
-    cell: ({ row }) => <div className="capitalize">{row.getValue("site")}</div>,
-  },
-  {
-    accessorKey: "vdom",
-    header: "VDOM",
-    cell: ({ row }) => <div>{row.getValue("vdom")}</div>,
-  },
-  {
-    accessorKey: "interface_name",
-    header: "Interface Name",
-    cell: ({ row }) => <div>{row.getValue("interface_name")}</div>,
+    accessorKey: "vdom.vdom_name",
+    header: "VDOM Name",
+    cell: ({ row }) => <div>{row.original.vdom?.vdom_name || '-'}</div>,
   },
   {
     accessorKey: "description",
     header: "Description",
-    cell: ({ row }) => <div>{row.getValue("description")}</div>,
+    cell: ({ row }) => (
+      <div>
+        {row.original.description ? (
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <Badge variant="outline" className="cursor-help flex items-center space-x-1 hover:bg-primary/10">
+                <span className="w-2 h-2 bg-primary rounded-full"></span>
+                <span>Description</span>
+              </Badge>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80 p-0">
+              <div className="bg-muted/50 p-3 border-b">
+                <h4 className="font-semibold">Interface Description</h4>
+              </div>
+              <div className="p-3">
+                <p className="text-sm">{row.original.description}</p>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        ) : (
+          '-'
+        )}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className={
+          row.original.status === 'up'
+            ? 'bg-green-500 text-white'
+            : row.original.status === 'down'
+            ? 'bg-red-500 text-white'
+            : 'bg-blue-500 text-white'
+        }
+      >
+        {row.original.status || 'unknown'}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "last_updated",
+    header: "Last Updated",
+    cell: ({ row }) => (
+      <div className="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span className="text-sm">{new Date(row.original.last_updated).toLocaleString()}</span>
+      </div>
+    ),
   },
   {
     id: "actions",
-    enableHiding: false,
     cell: ({ row }) => {
       const interfaceIp = row.original
 
@@ -105,7 +145,7 @@ export const columns: ColumnDef<FortiInterfaceIP>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(interfaceIp.ip)}
+              onClick={() => navigator.clipboard.writeText(interfaceIp.ip_address || "")}
             >
               Copy IP Address
             </DropdownMenuItem>

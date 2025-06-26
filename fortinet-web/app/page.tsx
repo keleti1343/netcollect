@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function Home() {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Welcome to Fortinet Network Visualizer</h1>
+      <h1 className="text-3xl">Welcome to Fortinet Network Visualizer</h1>
       
       <Card className="w-full max-w-4xl">
         <CardHeader>

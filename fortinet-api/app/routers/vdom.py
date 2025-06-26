@@ -17,21 +17,22 @@ def read_vdoms(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, le=200),
     fw_name: Optional[str] = None,
+    firewall_id: Optional[int] = Query(None, description="Filter by Firewall ID"), # Added firewall_id
     vdom_name: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """
     Retrieve VDOMs with optional filtering by firewall name and VDOM name.
     """
-    firewall_id = None
-    if fw_name:
+    resolved_firewall_id = firewall_id # Use direct firewall_id if provided
+    if fw_name: # If fw_name is provided, resolve it to firewall_id
         firewall = firewall_crud.get_firewall_by_name(db, fw_name=fw_name)
         if firewall:
-            firewall_id = firewall.firewall_id
+            resolved_firewall_id = firewall.firewall_id
         else:
             return {"items": [], "total_count": 0}
             
-    db_vdoms, total_count = crud.get_vdoms(db, skip=skip, limit=limit, firewall_id=firewall_id, vdom_name=vdom_name)
+    db_vdoms, total_count = crud.get_vdoms(db, skip=skip, limit=limit, firewall_id=resolved_firewall_id, vdom_name=vdom_name)
     # Convert to response models
     vdoms = [VDOMResponse.from_orm(vdom) for vdom in db_vdoms]
     return {"items": vdoms, "total_count": total_count}

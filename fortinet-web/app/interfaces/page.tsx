@@ -6,6 +6,10 @@ import { InterfaceResponse, VDOMResponse } from "@/types"; // Import VDOMRespons
 import { InterfacesFilter } from "./components/interfaces-filter";
 import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"; // Import HoverCard components
+import { Button } from "@/components/ui/button";
+import { TableCode } from "@/components/ui/table-code"; // Import TableCode
+import { HoverCardHeader } from "@/components/ui/hover-card-header"; // Import HoverCardHeader
+import { EmptyState } from "@/components/empty-state"; // Import EmptyState
 
 export default async function InterfacesPage({
   searchParams
@@ -37,88 +41,146 @@ export default async function InterfacesPage({
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Interfaces</h1>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter Options</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InterfacesFilter initialName={name} initialIp={ip} vdoms={vdoms} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Network Interfaces</CardTitle>
-          <CardDescription>Manage network interfaces</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>IP Address</TableHead>
-                <TableHead>VDOM Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Updated</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {interfaces.map((iface: import("../types").InterfaceResponse) => (
-                <TableRow key={iface.interface_id}>
-                  <TableCell>{iface.interface_name}</TableCell>
-                  <TableCell>{iface.ip_address || '-'}</TableCell>
-                  <TableCell>{iface.vdom?.vdom_name || '-'}</TableCell>
-                  <TableCell>
-                    {iface.description ? (
-                      <HoverCard>
-                        <HoverCardTrigger asChild>
-                          <Badge variant="secondary" className="cursor-help bg-blue-500 text-white">
-                            Description
-                          </Badge>
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-80">
-                          <p className="text-sm">{iface.description}</p>
-                        </HoverCardContent>
-                      </HoverCard>
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        iface.status === 'up'
-                          ? 'default'
-                          : iface.status === 'down'
-                          ? 'destructive'
-                          : 'secondary'
-                      }
-                      className={
-                        iface.status === 'up'
-                          ? 'bg-green-500 text-white'
-                          : iface.status === 'down'
-                          ? 'bg-red-500 text-white'
-                          : 'bg-blue-500 text-white' // Same color as Apply Filter button
-                      }
-                    >
-                      {iface.status || 'unknown'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{new Date(iface.last_updated).toLocaleString()}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          <div className="mt-4 flex justify-center">
-            <DataPagination currentPage={page} totalPages={totalPages} />
+    <div className="space-y-8 max-w-7xl mx-auto">
+        <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
+          <div>
+            <h1 className="text-3xl tracking-tight">Interfaces</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage and monitor network interfaces across your Fortinet devices
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        {/* Enhanced Filter Card */}
+        <Card className="border shadow-md">
+          <CardHeader className="bg-muted/50 pb-3">
+            <CardTitle className="text-lg flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Filter Options
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <InterfacesFilter initialName={name} initialIp={ip} vdoms={vdoms} />
+          </CardContent>
+        </Card>
+        
+        {/* Enhanced Main Content Card */}
+        <Card className="border shadow-md">
+          <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+                Network Interfaces
+              </CardTitle>
+              <CardDescription>
+                Total: {totalCount} interfaces
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-muted-foreground">
+                {interfaces.length > 0 ?
+                  `Showing ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of ${totalCount}` :
+                  'No interfaces found'}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-auto">
+              <Table className="border-collapse">
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="hover:bg-muted/20">
+                    <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Name</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">IP Address</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDOM Name</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Description</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Status</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {interfaces.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6}>
+                        <EmptyState title="No Interfaces Found" description="No interfaces match your criteria. Try adjusting your filters." />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    interfaces.map((iface: InterfaceResponse) => (
+                      <TableRow key={iface.interface_id} className="hover:bg-muted/20 border-b">
+                        <TableCell className="font-medium">{iface.interface_name}</TableCell>
+                        <TableCell>
+                          <TableCode>{iface.ip_address || '-'}</TableCode>
+                        </TableCell>
+                        <TableCell>
+                          {iface.vdom?.vdom_name ? (
+                            <Badge variant="vdom">
+                              {iface.vdom.vdom_name}
+                            </Badge>
+                          ) : (
+                            <Badge variant="placeholder">
+                              -
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {iface.description ? (
+                            <HoverCard>
+                              <HoverCardTrigger asChild>
+                                <Badge variant="info" className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+                                  Description
+                                </Badge>
+                              </HoverCardTrigger>
+                              <HoverCardContent className="p-0">
+                                <HoverCardHeader>
+                                  <h4 className="font-medium">Interface Description</h4>
+                                </HoverCardHeader>
+                                <div className="p-[var(--hover-card-content-padding)]">
+                                  <p className="text-sm">{iface.description}</p>
+                                </div>
+                              </HoverCardContent>
+                            </HoverCard>
+                          ) : (
+                            <Badge variant="placeholder">
+                              -
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              iface.status === 'up'
+                                ? 'success'
+                                : iface.status === 'down'
+                                ? 'error'
+                                : 'warning'
+                            }
+                          >
+                            {iface.status || 'unknown'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <small>{new Date(iface.last_updated).toLocaleString()}</small>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            
+            {/* Enhanced Pagination */}
+            <div className="border-t p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, totalCount)} of {totalCount} interfaces
+                </div>
+                <DataPagination currentPage={page} totalPages={totalPages} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
     </div>
   );
 }

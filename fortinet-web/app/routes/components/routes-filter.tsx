@@ -35,7 +35,7 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
   const [selectedVdomId, setSelectedVdomId] = React.useState(initialVdomId || ""); // Changed state variable
 
   const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
-    label: `${vdom.vdom_name} (ID: ${vdom.vdom_id})`, // Display name and ID for clarity in dropdown
+    label: `${vdom.vdom_name} (${vdom.total_routes || 0} Routes)`, // Display name and number of routes
     value: vdom.vdom_id.toString(), // Use vdom_id as the value
   }));
 
@@ -73,7 +73,7 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
               variant="outline"
               role="combobox"
               aria-expanded={vdomOpen}
-              className="w-[250px] justify-between"
+              className="w-[250px] justify-between shadow-sm"
               id="vdom-filter"
             >
               {selectedVdomId
@@ -114,8 +114,19 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
       </div>
       
       <div className="flex gap-2">
-        <Button onClick={handleApplyFilter}>Apply Filter</Button>
-        <Button variant="outline" onClick={handleClearFilter}>Clear</Button>
+        <Button
+          onClick={handleApplyFilter}
+          className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
+        >
+          Apply Filter
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleClearFilter}
+          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] transition-all"
+        >
+          Clear
+        </Button>
       </div>
     </div>
   );

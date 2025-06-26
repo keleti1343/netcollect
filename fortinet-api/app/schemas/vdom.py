@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime
+from app.schemas.firewall import FirewallResponse
 
 class VDOMBase(BaseModel):
     firewall_id: int
@@ -17,6 +18,10 @@ class VDOMUpdate(BaseModel):
 class VDOMResponse(VDOMBase):
     vdom_id: int
     last_updated: datetime
+    firewall: Optional[FirewallResponse] = None
+    total_routes: Optional[int] = None
+    total_interfaces: Optional[int] = None
+    total_vips: Optional[int] = None
 
     # Updated for Pydantic V2 compatibility
     model_config = ConfigDict(from_attributes=True)

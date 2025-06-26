@@ -2,7 +2,7 @@
 
 // Temporary comment to force re-processing
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,8 +12,10 @@ import { searchIPs } from "@/services/api";
 import { InterfaceResponse, RouteResponse, VIPResponse } from "@/types";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
+import { TableCode } from "@/components/ui/table-code"; // Import TableCode
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataPagination } from "@/components/data-pagination"; // Import DataPagination
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
 
 export default function SearchIPsPage() {
   const [query, setQuery] = useState("");
@@ -85,27 +87,53 @@ export default function SearchIPsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Search IPs</h1>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Enhanced Page Header */}
+      <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
+        <h1 className="text-3xl tracking-tight">Search IPs</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Search for IP addresses across interfaces, routes, and VIPs
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>IP Address Search</CardTitle>
+      {/* Enhanced Filter Card (Search Input) */}
+      <Card className="border shadow-md">
+        <CardHeader className="bg-muted/50 pb-3">
+          <CardTitle className="text-lg flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            IP Address Search
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="pt-4 space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="ip-search">Enter IP Address or Subnet</Label>
-            <Input
-              id="ip-search"
-              placeholder="e.g., 172, 192.168, 192.168.1, 192.168.1.1, 10.0.0.0/24"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  handleSearch();
-                }
-              }}
-            />
+            <Label htmlFor="ip-search">Search for IP:</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Input
+                    id="ip-search"
+                    placeholder="e.g., 172, 192.168, 192.168.1, 192.168.1.1, 10.0.0.0/24"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch();
+                      }
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Supported formats:</p>
+                  <ul>
+                    <li>Partial octet prefix (e.g., 172)</li>
+                    <li>Partial IP (e.g., 172.25)</li>
+                    <li>Full IP address (e.g., 172.25.10.1)</li>
+                    <li>CIDR subnet notation (e.g., 172.25.10.0/24)</li>
+                    <li>Host with CIDR mask (e.g., 172.25.10.1/32)</li>
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <Button onClick={() => handleSearch()} disabled={loading}>
             {loading ? "Searching..." : "Search"}
@@ -119,187 +147,261 @@ export default function SearchIPsPage() {
               <Skeleton className="h-40 w-full" />
             </div>
           )}
-
-          {searchResults && (
-            <Tabs defaultValue="interfaces" className="w-full">
-              <TabsList>
-                <TabsTrigger value="interfaces">Interfaces ({searchResults.interfaces.items.length})</TabsTrigger>
-                <TabsTrigger value="routes">Routes ({searchResults.routes.items.length})</TabsTrigger>
-                <TabsTrigger value="vips">VIPs ({searchResults.vips.items.length})</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="interfaces">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Interfaces</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {searchResults.interfaces.items.length === 0 ? (
-                      <p>No interfaces found for the given IP.</p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>IP Address</TableHead>
-                            <TableHead>VDOM Name</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {searchResults.interfaces.items.map((iface) => (
-                            <TableRow key={iface.interface_id}>
-                              <TableCell>{iface.interface_name}</TableCell>
-                              <TableCell>{iface.ip_address || '-'}</TableCell>
-                              <TableCell>{iface.vdom?.vdom_name || '-'}</TableCell>
-                              <TableCell>
-                                {iface.description ? (
-                                  <HoverCard>
-                                    <HoverCardTrigger asChild>
-                                      <Badge variant="secondary" className="cursor-help bg-blue-500 text-white">
-                                        Description
-                                      </Badge>
-                                    </HoverCardTrigger>
-                                    <HoverCardContent className="w-80">
-                                      <p className="text-sm">{iface.description}</p>
-                                    </HoverCardContent>
-                                  </HoverCard>
-                                ) : (
-                                  '-'
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    iface.status === 'up'
-                                      ? 'default'
-                                      : iface.status === 'down'
-                                      ? 'destructive'
-                                      : 'secondary'
-                                  }
-                                  className={
-                                    iface.status === 'up'
-                                      ? 'bg-green-500 text-white'
-                                      : iface.status === 'down'
-                                      ? 'bg-red-500 text-white'
-                                      : 'bg-blue-500 text-white'
-                                  }
-                                >
-                                  {iface.status === 'unknown' ? '-' : iface.status || '-'}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                    {searchResults.interfaces.total_count > pageSize && (
-                      <div className="mt-4 flex justify-center">
-                        <DataPagination
-                          currentPage={interfacesPage}
-                          totalPages={Math.ceil(searchResults.interfaces.total_count / pageSize)}
-                          onPageChange={handleInterfacesPageChange}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="routes">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Routes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {searchResults.routes.items.length === 0 ? (
-                      <p>No routes found for the given IP.</p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>VDOM Name</TableHead>
-                            <TableHead>Destination Network</TableHead>
-                            <TableHead>Gateway</TableHead>
-                            <TableHead>Exit Interface</TableHead>
-                            <TableHead>Last Updated</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {searchResults.routes.items.map((route) => (
-                            <TableRow key={route.route_id}>
-                              <TableCell>{route.vdom?.vdom_name || '-'}</TableCell>
-                              <TableCell>{route.destination_network}/{route.mask_length}</TableCell>
-                              <TableCell>{route.gateway === 'n/a' ? '-' : route.gateway || '-'}</TableCell>
-                              <TableCell>{route.exit_interface_name}</TableCell>
-                              <TableCell>{new Date(route.last_updated).toLocaleString()}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                    {searchResults.routes.total_count > pageSize && (
-                      <div className="mt-4 flex justify-center">
-                        <DataPagination
-                          currentPage={routesPage}
-                          totalPages={Math.ceil(searchResults.routes.total_count / pageSize)}
-                          onPageChange={handleRoutesPageChange}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="vips">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>VIPs</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {searchResults.vips.items.length === 0 ? (
-                      <p>No VIPs found for the given IP.</p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>VDOM Name</TableHead>
-                            <TableHead>External IP</TableHead>
-                            <TableHead>Mapped IP</TableHead>
-                            <TableHead>External Port</TableHead>
-                            <TableHead>Mapped Port</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {searchResults.vips.items.map((vip) => (
-                            <TableRow key={vip.vip_id}>
-                              <TableCell>{vip.vdom?.vdom_name || '-'}</TableCell>
-                              <TableCell>{vip.external_ip}</TableCell>
-                              <TableCell>{vip.mapped_ip}</TableCell>
-                              <TableCell>{vip.external_port || '-'}</TableCell>
-                              <TableCell>{vip.mapped_port || '-'}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                    {searchResults.vips.total_count > pageSize && (
-                      <div className="mt-4 flex justify-center">
-                        <DataPagination
-                          currentPage={vipsPage}
-                          totalPages={Math.ceil(searchResults.vips.total_count / pageSize)}
-                          onPageChange={handleVipsPageChange}
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          )}
         </CardContent>
       </Card>
+
+      {searchResults && (
+        <Card className="border shadow-md">
+          <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                Search Results
+              </CardTitle>
+              <CardDescription>
+                Results found across Interfaces, Routes, and VIPs
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Tabs defaultValue="interfaces" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="interfaces">Interfaces ({searchResults.interfaces.total_count})</TabsTrigger>
+                <TabsTrigger value="routes">Routes ({searchResults.routes.total_count})</TabsTrigger>
+                <TabsTrigger value="vips">VIPs ({searchResults.vips.total_count})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="interfaces" className="p-4">
+                <div className="overflow-auto">
+                  {searchResults.interfaces.items.length === 0 ? (
+                    <EmptyState title="No Interfaces Found" description="No interfaces match your search criteria." />
+                  ) : (
+                    <Table className="border-collapse">
+                      <TableHeader className="bg-muted/50">
+                        <TableRow className="hover:bg-muted/20">
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">IP Address</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Name</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Type</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDOM Name</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Status</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {searchResults.interfaces.items.map((iface) => (
+                          <TableRow key={iface.interface_id} className="hover:bg-muted/20 border-b">
+                            <TableCell>
+                              <TableCode>{iface.ip_address || '-'}</TableCode>
+                            </TableCell>
+                            <TableCell className="font-medium">{iface.interface_name}</TableCell>
+                            <TableCell>
+                              {iface.type ? (
+                                <Badge variant="placeholder">
+                                  {iface.type}
+                                </Badge>
+                              ) : (
+                                <Badge variant="placeholder">
+                                  -
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {iface.vdom?.vdom_name ? (
+                                <Badge variant="vdom">
+                                  {iface.vdom.vdom_name}
+                                </Badge>
+                              ) : (
+                                <Badge variant="placeholder">
+                                  -
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  iface.status === 'up'
+                                    ? 'success'
+                                    : iface.status === 'down'
+                                    ? 'error'
+                                    : 'warning'
+                                }
+                              >
+                                {iface.status || '-'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <small>{new Date(iface.last_updated).toLocaleString()}</small>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+                {searchResults.interfaces.total_count > pageSize && (
+                  <div className="border-t p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {(interfacesPage - 1) * pageSize + 1}-{Math.min(interfacesPage * pageSize, searchResults.interfaces.total_count)} of {searchResults.interfaces.total_count} interfaces
+                      </div>
+                      <DataPagination
+                        currentPage={interfacesPage}
+                        totalPages={Math.ceil(searchResults.interfaces.total_count / pageSize)}
+                        onPageChange={handleInterfacesPageChange}
+                      />
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="routes" className="p-4">
+                <div className="overflow-auto">
+                  {searchResults.routes.items.length === 0 ? (
+                    <EmptyState title="No Routes Found" description="No routes match your search criteria." />
+                  ) : (
+                    <Table className="border-collapse">
+                      <TableHeader className="bg-muted/50">
+                        <TableRow className="hover:bg-muted/20">
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Destination Network</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Exit Interface</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Route Type</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Gateway</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDOM Name</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {searchResults.routes.items.map((route) => (
+                          <TableRow key={route.route_id} className="hover:bg-muted/20 border-b">
+                            <TableCell>
+                              <TableCode>{route.destination_network}/{route.mask_length}</TableCode>
+                            </TableCell>
+                            <TableCell className="font-medium">{route.exit_interface_name}</TableCell>
+                            <TableCell>
+                              <Badge variant="protocol">
+                                {route.route_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell><TableCode>{route.gateway === 'n/a' ? '-' : route.gateway || '-'}</TableCode></TableCell>
+                            <TableCell>
+                              {route.vdom ? (
+                                <Badge variant="vdom">
+                                  {route.vdom.vdom_name}
+                                </Badge>
+                              ) : (
+                                <Badge variant="placeholder">
+                                  -
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <small>{new Date(route.last_updated).toLocaleString()}</small>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+                {searchResults.routes.total_count > pageSize && (
+                  <div className="border-t p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {(routesPage - 1) * pageSize + 1}-{Math.min(routesPage * pageSize, searchResults.routes.total_count)} of {searchResults.routes.total_count} routes
+                      </div>
+                      <DataPagination
+                        currentPage={routesPage}
+                        totalPages={Math.ceil(searchResults.routes.total_count / pageSize)}
+                        onPageChange={handleRoutesPageChange}
+                      />
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="vips" className="p-4">
+                <div className="overflow-auto">
+                  {searchResults.vips.items.length === 0 ? (
+                    <EmptyState title="No VIPs Found" description="No VIPs match your search criteria." />
+                  ) : (
+                    <Table className="border-collapse">
+                      <TableHeader className="bg-muted/50">
+                        <TableRow className="hover:bg-muted/20">
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">External IP</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Mapped IP</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VIP Type</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDOM Name</TableHead>
+                          <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {searchResults.vips.items.map((vip) => (
+                          <TableRow key={vip.vip_id} className="hover:bg-muted/20 border-b">
+                            <TableCell>
+                              <TableCode>{vip.external_ip}</TableCode>
+                            </TableCell>
+                            <TableCell>
+                              <TableCode>{vip.mapped_ip}</TableCode>
+                            </TableCell>
+                            <TableCell>
+                              {vip.vip_type ? (
+                                <Badge variant="placeholder">
+                                  {vip.vip_type}
+                                </Badge>
+                              ) : (
+                                <Badge variant="placeholder">
+                                  -
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {vip.vdom ? (
+                                <Badge variant="vdom">
+                                  {vip.vdom.vdom_name}
+                                </Badge>
+                              ) : (
+                                <Badge variant="placeholder">
+                                  -
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                <small>{new Date(vip.last_updated).toLocaleString()}</small>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+                {searchResults.vips.total_count > pageSize && (
+                  <div className="border-t p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {(vipsPage - 1) * pageSize + 1}-{Math.min(vipsPage * pageSize, searchResults.vips.total_count)} of {searchResults.vips.total_count} VIPs
+                      </div>
+                      <DataPagination
+                        currentPage={vipsPage}
+                        totalPages={Math.ceil(searchResults.vips.total_count / pageSize)}
+                        onPageChange={handleVipsPageChange}
+                      />
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

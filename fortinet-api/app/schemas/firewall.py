@@ -26,6 +26,7 @@ class FirewallUpdate(BaseModel):
 class FirewallResponse(FirewallBase):
     firewall_id: int
     last_updated: datetime
+    total_vdoms: Optional[int] = None # Added for VDOMs count
 
     model_config = ConfigDict(from_attributes=True)
 

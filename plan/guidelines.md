@@ -588,6 +588,551 @@ def read_routes(
 *   **Clear API Contracts:** Define clear API contracts for your endpoints, including all query parameters they accept. Use FastAPI's `Query`, `Path`, and `Body` to explicitly define parameter types, default values, and validation.
 *   **Parameter Propagation:** Ensure that parameters received at the API endpoint layer are correctly propagated to underlying service or CRUD layers if those layers depend on them.
 
+### Issue: Missing Related Data in API Response (e.g., "No Firewall" for VDOMs)
+
+#### Overall Problem
+
+The "Firewall" column in the VDOMs list displayed hyphens (`-`) instead of the actual firewall name. This indicated that while the VDOM data was being fetched, the associated firewall information was not being correctly included in the API response sent to the frontend. This is a common issue when dealing with relational data and requires ensuring data is correctly fetched, serialized, and typed across the full stack.
+
+#### Backend Investigation and Fix
+
+##### Pydantic Schema Mismatch (Root Cause)
+
+*   **Problem:** The `VDOMResponse` Pydantic schema in `fortinet-api/app/schemas/vdom.py` did not define a field to include the nested `FirewallResponse` object. Even though the SQLAlchemy model had the relationship and the CRUD function was eagerly loading the firewall data, Pydantic would not serialize it without an explicit field in the response schema.
+*   **Consequence:** The frontend only received the `firewall_id` (if present) but not the full `firewall` object containing `fw_name`, leading to the display of hyphens.
+
+##### Solution: Update Pydantic Schema
+
+The `VDOMResponse` schema in `fortinet-api/app/schemas/vdom.py` was updated to include the nested `firewall` object:
+
+###### Code Example (`fortinet-api/app/schemas/vdom.py` - Snippet)
+
+```python
+# In fortinet-api/app/schemas/vdom.py
+from pydantic import BaseModel, ConfigDict
+from typing import List, Optional
+from datetime import datetime
+from app.schemas.firewall import FirewallResponse # Import FirewallResponse
+
+# ... (existing VDOMBase, VDOMCreate, VDOMUpdate)
+
+class VDOMResponse(VDOMBase):
+    vdom_id: int
+    last_updated: datetime
+    firewall: Optional[FirewallResponse] = None # ADDED: This field allows the full Firewall object to be included
+
+    model_config = ConfigDict(from_attributes=True) # Ensures Pydantic can read from ORM attributes
+```
+
+#### Recommendations to Avoid Similar Issues
+
+1.  **Align Pydantic Schemas with Data Needs:** When an API response needs to include data from related database tables (e.g., a Firewall's details within a VDOM's details), ensure the Pydantic response schema explicitly defines fields for these nested objects.
+    *   Import the Pydantic schema for the related object (e.g., `FirewallResponse`).
+    *   Add an optional field of that type to the parent schema (e.g., `firewall: Optional[FirewallResponse] = None` in `VDOMResponse`).
+2.  **Utilize `from_attributes` (Pydantic V2) / `orm_mode` (Pydantic V1):** When working with SQLAlchemy models, enable this setting in your Pydantic model's config to allow automatic mapping from ORM attributes to schema fields.
+3.  **Verify Eager Loading in CRUD:** Ensure your SQLAlchemy queries in the CRUD layer (e.g., using `joinedload` or `selectinload`) are correctly fetching the related data when needed. While this was correct in this specific instance, it's a common point of failure.
+4.  **Consistent Frontend and Backend Types:** Keep frontend TypeScript types (e.g., in `fortinet-web/types.ts`) synchronized with backend Pydantic schemas. If the backend schema changes to include more data, update the frontend types accordingly to leverage that data and avoid type errors.
+5.  **Test API Responses Thoroughly:** When developing API endpoints, manually inspect the JSON responses (e.g., using tools like Postman, curl, or browser developer tools) to confirm that all expected data, including nested objects, is present and correctly structured. Don't rely solely on the absence of errors.
+### Issue: Displaying Aggregated Data (e.g., Route Count per VDOM)
+
+#### Overall Problem
+
+The frontend needed to display aggregated data (specifically, the count of routes associated with each VDOM) in the VDOM filter combobox on the Routes page. This data was not directly available in the initial API response for VDOMs, requiring modifications across the full stack to retrieve, serialize, and display this information.
+
+#### Backend Investigation and Fix
+
+##### Pydantic Schema Update
+
+*   **Problem:** The `VDOMResponse` Pydantic schema in `fortinet-api/app/schemas/vdom.py` did not include a field to hold the aggregated route count.
+*   **Solution:** Added an optional `total_routes` field to the `VDOMResponse` schema.
+
+###### Code Example (`fortinet-api/app/schemas/vdom.py` - Snippet)
+
+```python
+# In fortinet-api/app/schemas/vdom.py
+from pydantic import BaseModel, ConfigDict
+from typing import List, Optional
+from datetime import datetime
+from app.schemas.firewall import FirewallResponse
+
+class VDOMResponse(VDOMBase):
+    vdom_id: int
+    last_updated: datetime
+    firewall: Optional[FirewallResponse] = None
+    total_routes: Optional[int] = None # ADDED: Field to store the count of routes
+    model_config = ConfigDict(from_attributes=True)
+```
+
+##### CRUD Logic for Aggregation
+
+*   **Problem:** The `get_vdoms` function in `fortinet-api/app/crud/vdom.py` was not calculating or including the count of routes for each VDOM.
+*   **Solution:** Modified the `get_vdoms` CRUD function to perform a subquery that counts routes per VDOM and then joins this count with the main VDOM query. The `total_routes` attribute is then dynamically attached to each VDOM object before being returned.
+
+###### Code Example (`fortinet-api/app/crud/vdom.py` - Snippet)
+
+```python
+# In fortinet-api/app/crud/vdom.py
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
+from typing import List, Optional, Tuple
+from app.models.vdom import VDOM
+from app.models.route import Route # Import Route model
+
+def get_vdoms(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    firewall_id: Optional[int] = None,
+    vdom_name: Optional[str] = None
+) -> Tuple[List[VDOM], int]:
+    query = db.query(VDOM).options(joinedload(VDOM.firewall))
+    # ... (existing filters for total_count) ...
+    total_count = query.count()
+
+    # Subquery to count routes for each VDOM
+    route_count_subquery = (
+        db.query(func.count(Route.route_id))
+        .filter(Route.vdom_id == VDOM.vdom_id)
+        .scalar_subquery()
+    )
+
+    # Modify the main query to select VDOM and the route count
+    query_with_count = db.query(VDOM, route_count_subquery.label("total_routes")).options(joinedload(VDOM.firewall))
+    # ... (existing filters for query_with_count) ...
+
+    items_with_count = query_with_count.offset(skip).limit(limit).all()
+
+    processed_items = []
+    for vdom_obj, total_routes_count in items_with_count:
+        vdom_obj.total_routes = total_routes_count if total_routes_count is not None else 0
+        processed_items.append(vdom_obj)
+
+    return processed_items, total_count
+```
+
+#### Frontend Implementation and Fix
+
+##### Type Definition Update
+
+*   **Problem:** The `VDOMResponse` TypeScript interface in `fortinet-web/types.ts` did not include the `total_routes` property, leading to type errors when attempting to access it on the frontend.
+*   **Solution:** Added an optional `total_routes` field to the `VDOMResponse` interface.
+
+###### Code Example (`fortinet-web/types.ts` - Snippet)
+
+```typescript
+// In fortinet-web/types.ts
+export interface VDOMResponse {
+  firewall_id: number;
+  vdom_name: string;
+  vdom_index?: number | null;
+  vdom_id: number;
+  last_updated: string;
+  firewall?: FirewallResponse;
+  total_routes?: number | null; // ADDED: Field to store the count of routes
+}
+```
+
+##### Display Logic Update
+
+*   **Problem:** The VDOM filter combobox in `fortinet-web/app/routes/components/routes-filter.tsx` was displaying VDOM names with their IDs (e.g., "root (ID: 1)"), but the requirement was to show the number of routes (e.g., "root (12 Routes)").
+*   **Solution:** Modified the `label` generation for `vdomOptions` in `fortinet-web/app/routes/components/routes-filter.tsx` to include `total_routes`.
+
+###### Code Example (`fortinet-web/app/routes/components/routes-filter.tsx` - Snippet)
+
+```typescript
+// In fortinet-web/app/routes/components/routes-filter.tsx
+const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
+  label: `${vdom.vdom_name} (${vdom.total_routes || 0} Routes)`, // Display name and number of routes
+  value: vdom.vdom_id.toString(), // Use vdom_id as the value
+}));
+```
+
+#### Recommendations to Avoid Similar Issues
+
+1.  **Anticipate Data Needs:** Before implementing a feature, consider all data points that might be needed for display or filtering, including aggregated metrics.
+2.  **Full-Stack Data Flow:** When introducing new data, trace its path from the database through the backend API to the frontend. Ensure all layers (ORM models, Pydantic schemas, CRUD functions, API routers, frontend types, and UI components) are updated consistently.
+3.  **Efficient Aggregation:** For aggregated data (like counts), use database-level aggregation (e.g., `func.count`, subqueries, or joins) in your CRUD operations to minimize the number of database queries and improve performance.
+4.  **Clear UI/UX Requirements:** Ensure clear communication of how data should be presented in the UI, especially for complex or aggregated information.
+5.  **Iterative Testing:** Test each layer of the application (backend API, frontend data fetching, UI rendering) independently and then together to catch discrepancies early.
+### Issue: Implementing New Page with Filters and Aggregated Data (VIPs Page Example)
+
+#### Overall Problem
+
+Implementing the "VIPs" page with a VDOM filter that displays aggregated data (number of VIPs per VDOM) presented several challenges, primarily related to backend data aggregation and frontend component architecture in Next.js.
+
+#### Backend Investigation and Fixes
+
+##### 1. Missing Aggregated Data in VDOM Response
+
+*   **Problem:** The `VDOMResponse` Pydantic schema in `fortinet-api/app/schemas/vdom.py` did not include a field to hold the aggregated count of VIPs for each VDOM.
+*   **Solution:** Added an optional `total_vips` field to the `VDOMResponse` schema.
+
+###### Code Example (`fortinet-api/app/schemas/vdom.py` - Snippet)
+
+```python
+# In fortinet-api/app/schemas/vdom.py
+from pydantic import BaseModel, ConfigDict
+from typing import List, Optional
+from datetime import datetime
+from app.schemas.firewall import FirewallResponse
+
+class VDOMResponse(VDOMBase):
+    vdom_id: int
+    last_updated: datetime
+    firewall: Optional[FirewallResponse] = None
+    total_routes: Optional[int] = None
+    total_interfaces: Optional[int] = None
+    total_vips: Optional[int] = None # ADDED: Field to store the count of VIPs
+    model_config = ConfigDict(from_attributes=True)
+```
+
+##### 2. CRUD Logic for VIP Count Aggregation
+
+*   **Problem:** The `get_vdoms` function in `fortinet-api/app/crud/vdom.py` was not calculating or including the count of VIPs for each VDOM. Additionally, a `NameError` occurred because the subquery for `total_vips` was used before its definition.
+*   **Solution:** Modified the `get_vdoms` CRUD function to:
+    *   Import the `VIP` model.
+    *   Define a `vip_count_subquery` similar to existing count subqueries.
+    *   Include `total_vips` in the main query selection.
+    *   Dynamically attach the `total_vips` attribute to each VDOM object.
+
+###### Code Example (`fortinet-api/app/crud/vdom.py` - Snippet)
+
+```python
+# In fortinet-api/app/crud/vdom.py
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
+from typing import List, Optional, Tuple
+from app.models.vdom import VDOM
+from app.models.route import Route
+from app.models.interface import Interface
+from app.models.vip import VIP # Import the VIP model
+
+def get_vdoms(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    firewall_id: Optional[int] = None,
+    vdom_name: Optional[str] = None
+) -> Tuple[List[VDOM], int]:
+    # ... (existing query setup and filters) ...
+
+    # Subquery to count VIPs for each VDOM
+    vip_count_subquery = (
+        db.query(func.count(VIP.vip_id))
+        .filter(VIP.vdom_id == VDOM.vdom_id)
+        .scalar_subquery()
+    )
+
+    # Modify the main query to select VDOM and all counts
+    query_with_count = db.query(
+        VDOM,
+        route_count_subquery.label("total_routes"),
+        interface_count_subquery.label("total_interfaces"),
+        vip_count_subquery.label("total_vips") # ADDED
+    ).options(joinedload(VDOM.firewall))
+
+    # ... (existing filters and pagination) ...
+
+    # Reconstruct VDOM objects with all count attributes
+    processed_items = []
+    for vdom_obj, total_routes_count, total_interfaces_count, total_vips_count in items_with_count:
+        vdom_obj.total_routes = total_routes_count if total_routes_count is not None else 0
+        vdom_obj.total_interfaces = total_interfaces_count if total_interfaces_count is not None else 0
+        vdom_obj.total_vips = total_vips_count if total_vips_count is not None else 0 # ADDED
+        processed_items.append(vdom_obj)
+
+    return processed_items, total_count
+```
+
+#### Frontend Implementation and Fixes
+
+##### 1. Type Definition Update
+
+*   **Problem:** The `VDOMResponse` TypeScript interface in `fortinet-web/types.ts` did not include the `total_vips` property.
+*   **Solution:** Added an optional `total_vips` field to the `VDOMResponse` interface.
+
+###### Code Example (`fortinet-web/types.ts` - Snippet)
+
+```typescript
+// In fortinet-web/types.ts
+export interface VDOMResponse {
+  firewall_id: number;
+  vdom_name: string;
+  vdom_index?: number | null;
+  vdom_id: number;
+  last_updated: string;
+  firewall?: FirewallResponse;
+  total_routes?: number | null;
+  total_interfaces?: number | null;
+  total_vips?: number | null; // ADDED
+}
+```
+
+##### 2. Async Client Component Error
+
+*   **Problem:** The `VipsPage` component in `fortinet-web/app/vips/page.tsx` was initially made an `async` Client Component, which is not supported by Next.js. This led to a runtime error: "`<VipsPage> is an async Client Component. Only Server Components can be async at the moment.`"
+*   **Solution:** Reverted `VipsPage` to a standard Client Component (removed `async` from its definition) and re-implemented data fetching using `useEffect` and `useState` hooks. This ensures that client-side interactivity and server-side data fetching are handled correctly within Next.js's component model.
+
+###### Code Example (`fortinet-web/app/vips/page.tsx` - Snippet of changes)
+
+```typescript
+// In fortinet-web/app/vips/page.tsx
+"use client"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataPagination } from "@/components/data-pagination";
+import { getVips, getVdoms } from "@/services/api";
+import { VIPResponse, VDOMResponse } from "@/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { VipsFilter } from "./components/vips-filter"; // Import the new filter component
+
+export default function VipsPage() { // Changed from async function VipsPage(...)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [vips, setVips] = useState<VIPResponse[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [vdoms, setVdoms] = useState<VDOMResponse[]>([]); // State to store VDOMs for the filter
+
+  const vdom_id = searchParams.get("vdom_id") || "";
+  const currentPage = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
+  const pageSize = searchParams.get("pageSize") ? Number(searchParams.get("pageSize")) : 15;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch VIPs
+        const vipParams: Record<string, string> = {
+          skip: ((currentPage - 1) * pageSize).toString(),
+          limit: pageSize.toString(),
+        };
+        if (vdom_id) {
+          vipParams.vdom_id = vdom_id;
+        }
+        const vipsResponse = await getVips(vipParams);
+        setVips(vipsResponse.items);
+        setTotalCount(vipsResponse.total_count);
+
+        // Fetch VDOMs for the filter
+        const vdomsResponse = await getVdoms({});
+        setVdoms(vdomsResponse.items);
+
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+        setError("Failed to load data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentPage, pageSize, vdom_id]); // Add vdom_id to dependency array
+
+  // ... (rest of the component, including return JSX) ...
+}
+```
+
+##### 3. Display Logic for Aggregated Data in Combobox
+
+*   **Problem:** The VDOM filter combobox needed to display the number of VIPs per VDOM (e.g., "VDOM Name (15 VIPs)").
+*   **Solution:** Created a new filter component `fortinet-web/app/vips/components/vips-filter.tsx` and configured its `vdomOptions` mapping to include `total_vips` in the label.
+
+###### Code Example (`fortinet-web/app/vips/components/vips-filter.tsx` - Snippet)
+
+```typescript
+// In fortinet-web/app/vips/components/vips-filter.tsx
+import { VDOMResponse } from "@/types"
+
+interface VipsFilterProps {
+  vdoms: VDOMResponse[];
+  initialVdomId?: string;
+}
+
+export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
+  // ... (state and other functions) ...
+
+  const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
+    label: `${vdom.vdom_name} (${vdom.total_vips || 0} VIPs)`, // Display name and number of VIPs
+    value: vdom.vdom_id.toString(),
+  }));
+
+  // ... (rest of the component) ...
+}
+```
+
+#### Recommendations to Avoid Similar Issues
+
+1.  **Next.js Component Architecture:**
+    *   **Server Components (`async`):** Use `async` components only for Server Components (no `"use client"` directive). They are ideal for initial data fetching and rendering on the server.
+    *   **Client Components (`"use client"`):** Use standard React components with `useEffect` and `useState` for client-side interactivity and data fetching that depends on user interaction or dynamic state.
+    *   **Clear Separation:** Be mindful of where `"use client"` is placed. It marks the module and all its imports as Client Components.
+2.  **Full-Stack Data Flow for Aggregated Data:**
+    *   **Anticipate Needs:** Before implementing a feature, consider all data points, including aggregated metrics, that might be needed for display or filtering.
+    *   **Backend Aggregation:** Perform data aggregation (e.g., counts, sums) on the backend using efficient database queries (subqueries, joins with `GROUP BY`) to minimize data transfer and offload computation from the frontend.
+    *   **Schema Consistency:** Ensure backend Pydantic schemas and frontend TypeScript interfaces accurately reflect the structure of all data, including nested and aggregated fields.
+3.  **Robust Error Handling:** Implement comprehensive error handling on both frontend and backend to provide clear feedback during development and to users.
+4.  **Iterative Development & Testing:** Implement features in small, testable increments. Test each layer (backend API, frontend data fetching, UI rendering) independently and then together to catch discrepancies early.
+```
+### Issue: Displaying Related Aggregated Data in HoverCard (Firewalls Page VDOMs Example)
+
+#### Overall Problem
+
+The "Firewalls" page required replacing a simple "View VDoms" link with a `HoverCard` trigger displaying "vdoms(X)" (where X is the count of VDOMs for that firewall). Hovering over this trigger should then display a scrollable list of VDOMs pertaining only to that specific firewall. This involved backend data aggregation, frontend component architecture considerations, and correct data filtering.
+
+#### Implementation Steps
+
+1.  **Backend Schema Update (`fortinet-api/app/schemas/firewall.py`):**
+    *   **Purpose:** To include the count of VDOMs directly in the `FirewallResponse` object sent to the frontend.
+    *   **Change:** Added `total_vdoms: Optional[int] = None` to `FirewallResponse`.
+    *   **Code Example:**
+        ```python
+        # fortinet-api/app/schemas/firewall.py
+        class FirewallResponse(FirewallBase):
+            firewall_id: int
+            last_updated: datetime
+            total_vdoms: Optional[int] = None # ADDED for VDOMs count
+            model_config = ConfigDict(from_attributes=True)
+        ```
+
+2.  **Backend CRUD Logic Update (`fortinet-api/app/crud/firewall.py`):**
+    *   **Purpose:** To calculate and populate `total_vdoms` for each Firewall.
+    *   **Change:** Modified `get_firewalls` to use a scalar subquery to count VDOMs per firewall and attach this count to the `Firewall` objects.
+    *   **Code Example:**
+        ```python
+        # fortinet-api/app/crud/firewall.py
+        from sqlalchemy import func
+        from app.models.vdom import VDOM # Import VDOM model
+
+        def get_firewalls(...):
+            # ... existing query setup ...
+            vdom_count_subquery = (
+                db.query(func.count(VDOM.vdom_id))
+                .filter(VDOM.firewall_id == Firewall.firewall_id)
+                .scalar_subquery()
+            )
+            query_with_count = db.query(
+                Firewall,
+                vdom_count_subquery.label("total_vdoms")
+            )
+            # ... apply filters to query_with_count ...
+            items_with_count = query_with_count.offset(skip).limit(limit).all()
+            processed_items = []
+            for firewall_obj, total_vdoms_count in items_with_count:
+                firewall_obj.total_vdoms = total_vdoms_count if total_vdoms_count is not None else 0
+                processed_items.append(firewall_obj)
+            return processed_items, total_count
+        ```
+
+3.  **Frontend Type Definition Update (`fortinet-web/types.ts`):**
+    *   **Purpose:** To ensure type safety on the frontend when accessing `total_vdoms`.
+    *   **Change:** Added `total_vdoms?: number | null;` to `FirewallResponse` interface.
+    *   **Code Example:**
+        ```typescript
+        // fortinet-web/types.ts
+        export interface FirewallResponse {
+          firewall_id: number;
+          fw_name: string;
+          // ... other fields ...
+          total_vdoms?: number | null; // ADDED for VDOMs count
+        }
+        ```
+
+4.  **Frontend Display Logic Update (`fortinet-web/app/firewalls/page.tsx`):**
+    *   **Purpose:** To replace the old link with the new `HoverCard` trigger displaying the VDOM count and the `VdomsList` in the content.
+    *   **Change:** Replaced the `TableCell` content for VDOMs with a `HoverCard` structure. The `HoverCardTrigger` displays "VDoms (X)" using `firewall.total_vdoms`. The `HoverCardContent` renders the `VdomsList` component.
+    *   **Code Example:**
+        ```typescript
+        // fortinet-web/app/firewalls/page.tsx
+        // ...
+        <TableCell>
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <span className="cursor-help underline">VDoms ({firewall.total_vdoms || 0})</span>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80">
+              <VdomsList firewallId={firewall.firewall_id} firewallName={firewall.fw_name} />
+            </HoverCardContent>
+          </HoverCard>
+        </TableCell>
+        // ...
+        async function VdomsList({ firewallId, firewallName }: { firewallId: number, firewallName: string }) {
+          const { items: vdoms } = await getVdoms({ firewall_id: firewallId.toString() });
+          // ... render list of VDOMs ...
+        }
+        ```
+
+#### Issues Encountered and Fixes:
+
+1.  **Issue: "Event handlers cannot be passed to Client Component props."**
+    *   **Problem:** Initially, I tried to implement the button directly within the Server Component `FirewallsPage` with an `onClick` handler. Next.js throws this error because event handlers (which are client-side interactive features) cannot be directly passed from a Server Component to a Client Component (like the `Button` from Shadcn UI).
+    *   **Fix:** The solution was to encapsulate the interactive `Button` (and its `onClick` logic) within its own Client Component (`VdomsButton.tsx`). This Client Component then receives props from the Server Component. However, this approach was later reverted based on user feedback to use a `HoverCard`. This issue highlights the importance of understanding Next.js's Server and Client Component boundaries.
+    *   **Code Example (Initial incorrect approach and fix):**
+        ```typescript
+        // fortinet-web/app/firewalls/page.tsx (Initial incorrect)
+        // ...
+        <Button onClick={() => window.location.href = `/vdoms?fw_name=${encodeURIComponent(firewall.fw_name)}`}>
+          VDoms ({firewall.total_vdoms || 0})
+        </Button>
+        // ...
+
+        // fortinet-web/app/firewalls/components/vdoms-button.tsx (Corrected approach, later reverted)
+        "use client"
+        import { Button } from "@/components/ui/button";
+        import { useRouter } from "next/navigation";
+        export function VdomsButton({ firewallName, totalVdoms }: { firewallName: string; totalVdoms: number }) {
+          const router = useRouter();
+          const handleClick = () => { router.push(`/vdoms?fw_name=${encodeURIComponent(firewallName)}`); };
+          return (<Button onClick={handleClick}>VDoms ({totalVdoms})</Button>);
+        }
+        ```
+
+2.  **Issue: Incorrect VDOMs list in HoverCard (showing all VDOMs).**
+    *   **Problem:** After re-implementing the `HoverCard`, the `VdomsList` component was displaying all VDOMs instead of only those belonging to the specific firewall. This was because the `getVdoms` API call was not correctly receiving or applying the `firewall_id` filter on the backend. The frontend was passing `firewallId` (an integer), but the backend router's `read_vdoms` endpoint was primarily set up to filter VDOMs by `fw_name` (string) and `vdom_name`.
+    *   **Fix:** Modified the `read_vdoms` endpoint in `fortinet-api/app/routers/vdom.py` to explicitly accept `firewall_id: Optional[int]` as a query parameter. This allows the frontend to directly pass the numeric `firewallId`, which is then correctly used by the backend CRUD function to filter the VDOMs.
+    *   **Code Example:**
+        ```python
+        # fortinet-api/app/routers/vdom.py
+        @router.get("/", response_model=VDOMPaginationResponse)
+        def read_vdoms(
+            # ... existing params ...
+            firewall_id: Optional[int] = Query(None, description="Filter by Firewall ID"), # ADDED
+            # ...
+            db: Session = Depends(get_db)
+        ):
+            resolved_firewall_id = firewall_id # Use direct firewall_id if provided
+            if fw_name: # If fw_name is provided, resolve it to firewall_id
+                firewall = firewall_crud.get_firewall_by_name(db, fw_name=fw_name)
+                if firewall:
+                    resolved_firewall_id = firewall.firewall_id
+                else:
+                    return {"items": [], "total_count": 0}
+            # ...
+            db_vdoms, total_count = crud.get_vdoms(db, ..., firewall_id=resolved_firewall_id, ...)
+            # ...
+        ```
+
+#### Recommendations to Avoid Similar Issues
+
+1.  **Next.js Component Architecture (Server vs. Client):**
+    *   **Understand Boundaries:** Be acutely aware of the distinction between Server Components (default, `async` allowed, no direct event handlers) and Client Components (`"use client"`, interactive, use `useEffect`/`useState` for data fetching).
+    *   **Pass Data, Not Functions:** When passing data from Server to Client Components, ensure it's serializable. Avoid passing functions or complex objects that cannot be serialized.
+    *   **Encapsulate Interactivity:** If a part of your Server Component needs client-side interactivity (like a button with an `onClick` handler), encapsulate that interactive part within its own Client Component.
+2.  **Full-Stack Data Filtering and Aggregation:**
+    *   **API Parameter Design:** Design API endpoints to accept parameters that directly map to backend filtering logic (e.g., `firewall_id` for filtering by ID, `fw_name` for filtering by name).
+    *   **Backend Filtering Logic:** Ensure that CRUD functions and API routers correctly apply filters based on the received parameters.
+    *   **Eager Loading for Related Data:** When displaying related data (like VDOMs for a Firewall), use SQLAlchemy's eager loading (`joinedload`) to fetch all necessary data in a single query, preventing N+1 issues.
+    *   **Aggregated Data in Schemas:** Include aggregated data (like counts) directly in your Pydantic response schemas and ensure your CRUD functions calculate and populate these fields efficiently (e.g., using subqueries).
+3.  **Thorough Testing:**
+    *   **API Testing:** Use tools like Postman or `curl` to test API endpoints directly and verify that the responses are correctly filtered and contain all expected data.
+    *   **Component Testing:** Test individual components to ensure they render correctly and handle their state and props as expected.
+    *   **End-to-End Testing:** Perform end-to-end tests to verify the entire data flow from frontend interaction to backend processing and back.
+```
 ### Issue: VDOM Name Not Displayed for Interfaces
 
 #### Overall Problem

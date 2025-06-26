@@ -32,52 +32,51 @@ export const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
     const [open, setOpen] = React.useState(false);
 
     return (
-      <div ref={ref}>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-[200px] justify-between"
-            >
-              {value
-                ? options.find((option) => option.value === value)?.label
-                : placeholder || "Select..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-0">
-            <Command>
-              <CommandInput placeholder="Search..." />
-              <CommandList>
-                <CommandEmpty>No results found.</CommandEmpty>
-                <CommandGroup>
-                  {options.map((option) => (
-                    <CommandItem
-                      key={option.value}
-                      value={option.value}
-                      onSelect={() => {
-                        onChange(option.value);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === option.value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {option.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-                <CommandSeparator />
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            ref={ref}
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between h-[var(--combobox-height)] text-[var(--combobox-font-size)] px-[var(--combobox-padding-x)] rounded-[var(--combobox-border-radius)]"
+          >
+            {value
+              ? options.find((option) => option.value === value)?.label
+              : placeholder || "Select option..."}
+            <ChevronsUpDown className="ml-[var(--combobox-trigger-gap)] h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--combobox-content-width)] p-0">
+          <Command>
+            <CommandInput placeholder={placeholder || "Search..."} className="h-[var(--combobox-height)]" />
+            <CommandEmpty className="py-[var(--combobox-empty-padding)] text-center text-sm">
+              No results found.
+            </CommandEmpty>
+            <CommandGroup className="max-h-[var(--combobox-content-max-height)] overflow-auto">
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={() => {
+                    onChange(option.value === value ? "" : option.value);
+                    setOpen(false);
+                  }}
+                  className="h-[var(--combobox-item-height)] px-[var(--combobox-item-padding)]"
+                >
+                  <Check
+                    className={cn(
+                      "mr-[var(--combobox-item-gap)] h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
     );
   }
 );
