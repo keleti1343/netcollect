@@ -2,18 +2,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function Home() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-h1">
-        Welcome to Fortinet Network Visualizer
-        <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
-      </h1>
-      
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Enhanced Page Header */}
+      <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
+        <h1 className="text-3xl tracking-tight">
+          Welcome to Fortinet Network Visualizer
+          <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          A visual interface for Fortinet network configuration data
+        </p>
+      </div>
+
       <Card className="w-full max-w-4xl shadow-sm border border-[var(--color-neutral)]">
         <CardHeader className="pb-2">
           <CardTitle className="text-h2">Project Overview</CardTitle>
-          <CardDescription className="text-body-secondary">
-            A visual interface for Fortinet network configuration data
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-[var(--spacing-md)]">
           <p className="text-body">

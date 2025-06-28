@@ -43,7 +43,10 @@ filters.limit = currentPageSize.toString();
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Enhanced Page Header */}
       <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
-        <h1 className="text-3xl tracking-tight">Firewalls</h1>
+        <h1 className="text-3xl tracking-tight">
+          Firewalls
+          <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Manage and monitor your Fortinet firewall devices
         </p>
@@ -55,9 +58,8 @@ filters.limit = currentPageSize.toString();
       </FilterSection>
       
       {/* Enhanced Main Content Card */}
-      <Card className="border shadow-md" style={{
-        borderColor: 'rgba(26, 32, 53, 0.15)',
-        boxShadow: '0 4px 6px -1px rgba(26, 32, 53, 0.1), 0 2px 4px -1px rgba(26, 32, 53, 0.06)'
+      <Card className="border shadow-sm" style={{
+        borderColor: 'rgba(26, 32, 53, 0.15)'
       }}>
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
           <div>
@@ -112,14 +114,20 @@ filters.limit = currentPageSize.toString();
                         </HoverCardTrigger>
                         <HoverCardContent className="p-0">
                           <HoverCardHeader>
-                            <h4 className="font-medium">List of VDoms for {firewall.fw_name}</h4>
+                            <h4 className="font-medium">{firewall.fw_name}'s vdoms</h4>
                           </HoverCardHeader>
                           <div className="p-[var(--hover-card-content-padding)]">
                             <VdomsList firewallId={firewall.firewall_id} firewallName={firewall.fw_name} />
                           </div>
                         </HoverCardContent>
                       </HoverCard>
-                      <DateTimeCell date={firewall.last_updated} />
+                      {firewall.last_updated ? (
+                        <DateTimeCell date={firewall.last_updated} />
+                      ) : (
+                        <TableCell>
+                          <span className="text-muted-foreground">-</span>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
@@ -148,21 +156,23 @@ async function VdomsList({ firewallId, firewallName }: { firewallId: number, fir
   
   return (
     <div className="p-3">
-      <ScrollArea className="h-[200px] w-full">
-        {vdoms.length > 0 ? (
-          <div className="space-y-1">
-            {vdoms.map((vdom: VDOMResponse) => (
-              <div key={vdom.vdom_id} className="flex items-center p-2 rounded hover:bg-muted">
-                <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: '#1a2035' }}></div>
-                <span>{vdom.vdom_name}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-4 text-muted-foreground">
-            No VDoms found
-          </div>
-        )}
+      <ScrollArea className={vdoms.length > 0 ? "h-[300px] w-full" : "w-full"} orientation="both"> {/* Conditional height */}
+        <div className="overflow-x-auto">
+          {vdoms.length > 0 ? (
+            <div className="space-y-1 w-max">
+              {vdoms.map((vdom: VDOMResponse) => (
+                <div key={vdom.vdom_id} className="flex items-center p-2 rounded bg-neutral-50 hover:bg-muted">
+                  <span className="mr-2 text-muted-foreground">−</span>
+                  <TableCode className="text-sm">{vdom.vdom_name}</TableCode>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground w-max text-sm">
+              <TableCode>No VDoms found</TableCode>
+            </div>
+          )}
+        </div>
       </ScrollArea>
     </div>
   );

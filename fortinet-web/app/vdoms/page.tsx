@@ -47,19 +47,23 @@ export default async function VdomsPage({
 
     return (
       <div className="space-y-2">
-        <ScrollArea className="h-[200px] w-full">
-          <ul className="list-disc pl-4">
+        <ScrollArea className={interfaces.length > 0 ? "h-[300px] w-full" : "w-full"} orientation="both"> {/* Conditional height */}
+          <ul className="list-none pl-4 space-y-1 overflow-x-auto w-max">
             {interfaces.length > 0 ? (
               interfaces.map((iface: InterfaceResponse) => (
-                <li key={iface.interface_id}>
-                  {iface.interface_name} - <TableCode>{iface.ip_address}</TableCode>
+                <li key={iface.interface_id} className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
+                  <span className="mr-2 text-muted-foreground">−</span>
+                  <TableCode>{iface.interface_name}</TableCode> - <TableCode>{iface.ip_address}</TableCode>
                 </li>
               ))
             ) : (
-              <li>No interfaces found</li>
+              <li className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
+                <span className="mr-2 text-muted-foreground">−</span>
+                <TableCode>No interfaces found</TableCode>
+              </li>
             )}
           </ul>
-        </ScrollArea>
+      </ScrollArea>
       </div>
     );
   }
@@ -69,19 +73,23 @@ export default async function VdomsPage({
 
     return (
       <div className="space-y-2">
-        <ScrollArea className="h-[200px] w-full">
-          <ul className="list-disc pl-4">
+        <ScrollArea className={vips.length > 0 ? "h-[300px] w-full" : "w-full"} orientation="both"> {/* Conditional height */}
+          <ul className="list-none pl-4 space-y-1 overflow-x-auto w-max">
             {vips.length > 0 ? (
               vips.map((vip: VIPResponse) => (
-                <li key={vip.vip_id}>
+                <li key={vip.vip_id} className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
+                  <span className="mr-2 text-muted-foreground">−</span>
                   <TableCode>{vip.external_ip}</TableCode> → <TableCode>{vip.mapped_ip}</TableCode>
                 </li>
               ))
             ) : (
-              <li>No VIPs found</li>
+              <li className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
+                <span className="mr-2 text-muted-foreground">−</span>
+                <TableCode>No VIPs found</TableCode>
+              </li>
             )}
           </ul>
-        </ScrollArea>
+      </ScrollArea>
       </div>
     );
   }
@@ -91,19 +99,23 @@ export default async function VdomsPage({
 
     return (
       <div className="space-y-2">
-        <ScrollArea className="h-[200px] w-full">
-          <ul className="list-disc pl-4">
+        <ScrollArea className={routes.length > 0 ? "h-[300px] w-full" : "w-full"} orientation="both"> {/* Conditional height */}
+          <ul className="list-none pl-4 space-y-1 overflow-x-auto w-max">
             {routes.length > 0 ? (
               routes.map((route: RouteResponse) => (
-                <li key={route.route_id}>
+                <li key={route.route_id} className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
+                  <span className="mr-2 text-muted-foreground">−</span>
                   <TableCode>{route.destination_network}/{route.mask_length}</TableCode> via <TableCode>{route.gateway || route.exit_interface_name}</TableCode>
                 </li>
               ))
             ) : (
-              <li>No routes found</li>
+              <li className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
+                <span className="mr-2 text-muted-foreground">−</span>
+                <TableCode>No routes found</TableCode>
+              </li>
             )}
           </ul>
-        </ScrollArea>
+      </ScrollArea>
       </div>
     );
   }
@@ -112,7 +124,10 @@ export default async function VdomsPage({
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Enhanced Page Header */}
       <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
-        <h1 className="text-3xl tracking-tight">VDoms</h1>
+        <h1 className="text-3xl tracking-tight">
+          VDoms
+          <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Manage virtual domains across your Fortinet devices
         </p>
@@ -129,10 +144,9 @@ export default async function VdomsPage({
       
       {/* Enhanced Main Content Card */}
       <Card
-        className="border shadow-md"
+        className="border shadow-sm"
         style={{
-          borderColor: 'rgba(26, 32, 53, 0.15)',
-          boxShadow: '0 1px 3px 0 rgba(26, 32, 53, 0.1), 0 1px 2px 0 rgba(26, 32, 53, 0.06)'
+          borderColor: 'rgba(26, 32, 53, 0.15)'
         }}
       >
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
@@ -196,7 +210,7 @@ export default async function VdomsPage({
                         </HoverCardTrigger>
                         <HoverCardContent className="p-0">
                           <HoverCardHeader>
-                            <h4 className="font-medium">Interfaces for {vdom.vdom_name}</h4>
+                            <h4 className="font-medium">{vdom.vdom_name}'s interfaces</h4>
                           </HoverCardHeader>
                           <div className="p-[var(--hover-card-content-padding)]">
                             <InterfacesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
@@ -213,7 +227,7 @@ export default async function VdomsPage({
                         </HoverCardTrigger>
                         <HoverCardContent className="p-0">
                           <HoverCardHeader>
-                            <h4 className="font-medium">VIPs for {vdom.vdom_name}</h4>
+                            <h4 className="font-medium">{vdom.vdom_name}'s VIPs</h4>
                           </HoverCardHeader>
                           <div className="p-[var(--hover-card-content-padding)]">
                             <VipsList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
@@ -230,33 +244,14 @@ export default async function VdomsPage({
                         </HoverCardTrigger>
                         <HoverCardContent className="p-0">
                           <HoverCardHeader>
-                            <h4 className="font-medium">Routes for {vdom.vdom_name}</h4>
+                            <h4 className="font-medium">{vdom.vdom_name}'s routes</h4>
                           </HoverCardHeader>
                           <div className="p-[var(--hover-card-content-padding)]">
                             <RoutesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
                           </div>
                         </HoverCardContent>
                       </HoverCard>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-muted-foreground"
-                          >
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
-                          </svg>
-                          <span>{new Date(vdom.last_updated).toLocaleString()}</span>
-                        </div>
-                      </TableCell>
+                      <DateTimeCell date={vdom.last_updated} />
                     </TableRow>
                   ))
                 )}

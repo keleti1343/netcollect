@@ -5,7 +5,7 @@ import { RoutesFilter } from "./components/routes-filter";
 import { getRoutes, getVdoms } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PrimaryCell, TechnicalCell } from "@/components/ui/table-cells";
+import { PrimaryCell, TechnicalCell, DateTimeCell } from "@/components/ui/table-cells";
 import { TableCode } from "@/components/ui/table-code";
 import { EmptyState } from "@/components/empty-state";
 import { FilterSection } from "@/components/ui/FilterSection";
@@ -43,7 +43,10 @@ export default async function RoutesPage({
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Enhanced Page Header */}
       <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
-        <h1 className="text-3xl tracking-tight">Routes</h1>
+        <h1 className="text-3xl tracking-tight">
+          Routes
+          <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Manage routing tables across your Fortinet devices
         </p>
@@ -56,10 +59,9 @@ export default async function RoutesPage({
       
       {/* Enhanced Main Content Card */}
       <Card
-        className="border shadow-md"
+        className="border shadow-sm"
         style={{
-          borderColor: 'rgba(26, 32, 53, 0.15)',
-          boxShadow: '0 1px 3px 0 rgba(26, 32, 53, 0.1), 0 1px 2px 0 rgba(26, 32, 53, 0.06)'
+          borderColor: 'rgba(26, 32, 53, 0.15)'
         }}
       >
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
@@ -106,26 +108,7 @@ export default async function RoutesPage({
                       <TechnicalCell value={route.gateway} />
                       <TechnicalCell value={route.exit_interface_name} />
                       <TechnicalCell value={route.vdom ? route.vdom.vdom_name : '−'} />
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="text-muted-foreground"
-                          >
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
-                          </svg>
-                          <span>{new Date(route.last_updated).toLocaleString()}</span>
-                        </div>
-                      </TableCell>
+                      <DateTimeCell date={route.last_updated} />
                     </TableRow>
                   ))
                 )}

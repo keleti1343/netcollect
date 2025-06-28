@@ -12,7 +12,7 @@ import { searchIPs } from "@/services/api";
 import { InterfaceResponse, RouteResponse, VIPResponse } from "@/types";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
-import { TechnicalCell } from "@/components/ui/table-cells";
+import { TechnicalCell, DateTimeCell } from "@/components/ui/table-cells";
 import { TableCode } from "@/components/ui/table-code";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataPagination } from "@/components/data-pagination";
@@ -98,14 +98,17 @@ export default function SearchIPsPage() {
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Enhanced Page Header */}
       <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
-        <h1 className="text-3xl tracking-tight">Search IPs</h1>
+        <h1 className="text-3xl tracking-tight">
+          Search IPs
+          <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Search for IP addresses across interfaces, routes, and VIPs
         </p>
       </div>
 
       {/* Enhanced Filter Card (Search Input) */}
-      <Card className="border border-[rgba(26,32,53,0.15)] shadow-md shadow-[rgba(26,32,53,0.05)]">
+      <Card className="border border-[rgba(26,32,53,0.15)] shadow-sm">
         <CardHeader className="bg-muted/50 pb-3">
           <CardTitle className="text-lg flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -132,12 +135,12 @@ export default function SearchIPsPage() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Supported formats:</p>
-                  <ul>
-                    <li>Partial octet prefix (e.g., 172)</li>
-                    <li>Partial IP (e.g., 172.25)</li>
-                    <li>Full IP address (e.g., 172.25.10.1)</li>
-                    <li>CIDR subnet notation (e.g., 172.25.10.0/24)</li>
-                    <li>Host with CIDR mask (e.g., 172.25.10.1/32)</li>
+                  <ul className="space-y-1 mt-2">
+                    <li><Badge variant="secondary">Partial octet prefix (e.g., 172)</Badge></li>
+                    <li><Badge variant="secondary">Partial IP (e.g., 172.25)</Badge></li>
+                    <li><Badge variant="secondary">Full IP address (e.g., 172.25.10.1)</Badge></li>
+                    <li><Badge variant="secondary">CIDR subnet notation (e.g., 172.25.10.0/24)</Badge></li>
+                    <li><Badge variant="secondary">Host with CIDR mask (e.g., 172.25.10.1/32)</Badge></li>
                   </ul>
                 </TooltipContent>
               </Tooltip>
@@ -163,7 +166,7 @@ export default function SearchIPsPage() {
       </Card>
 
       {searchResults && (
-        <Card className="border border-[rgba(26,32,53,0.15)] shadow-md shadow-[rgba(26,32,53,0.05)]">
+        <Card className="border border-[rgba(26,32,53,0.15)] shadow-sm">
           <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-lg flex items-center">
@@ -217,26 +220,7 @@ export default function SearchIPsPage() {
                             <TableCell>
                               <TableCode>{iface.status || '−'}</TableCode>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="text-muted-foreground"
-                                >
-                                  <circle cx="12" cy="12" r="10"/>
-                                  <polyline points="12 6 12 12 16 14"/>
-                                </svg>
-                                <span>{new Date(iface.last_updated).toLocaleString()}</span>
-                              </div>
-                            </TableCell>
+                            <DateTimeCell date={iface.last_updated} />
                           </TableRow>
                         ))}
                       </TableBody>
@@ -293,26 +277,7 @@ export default function SearchIPsPage() {
                             <TableCell>
                               <TableCode>{route.vdom?.vdom_name || '−'}</TableCode>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="text-muted-foreground"
-                                >
-                                  <circle cx="12" cy="12" r="10"/>
-                                  <polyline points="12 6 12 12 16 14"/>
-                                </svg>
-                                <span>{new Date(route.last_updated).toLocaleString()}</span>
-                              </div>
-                            </TableCell>
+                            <DateTimeCell date={route.last_updated} />
                           </TableRow>
                         ))}
                       </TableBody>
@@ -365,26 +330,7 @@ export default function SearchIPsPage() {
                             <TableCell>
                               <TableCode>{vip.vdom?.vdom_name || '−'}</TableCode>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="text-muted-foreground"
-                                >
-                                  <circle cx="12" cy="12" r="10"/>
-                                  <polyline points="12 6 12 12 16 14"/>
-                                </svg>
-                                <span>{new Date(vip.last_updated).toLocaleString()}</span>
-                              </div>
-                            </TableCell>
+                            <DateTimeCell date={vip.last_updated} />
                           </TableRow>
                         ))}
                       </TableBody>

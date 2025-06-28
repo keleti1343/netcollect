@@ -72,45 +72,36 @@ export function DateTimeCell({
   format?: "full" | "date" | "time";
 }) {
   const isEmpty = date === undefined || date === null || date === '' || date === 'n/a' || date === 'None';
-  if (isEmpty) return <EmptyCell {...props} />;
   
-  const dateObj = new Date(date);
-  const formattedDate = getFormattedDate(dateObj, format);
-  const fullDateTime = dateObj.toLocaleString();
+  const content = !isEmpty ? (
+    <span className="px-[var(--table-code-padding-x)] py-[var(--table-code-padding-y)] bg-[var(--table-code-bg)] rounded-[var(--table-code-border-radius)] text-[var(--table-code-font-size)] font-mono flex items-center gap-2">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-muted-foreground"
+      >
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span>{getFormattedDate(new Date(date), format)}</span>
+    </span>
+  ) : (
+    <EmptyValue />
+  );
   
   return (
     <TableCell
-      className={cn(
-        "flex items-center space-x-2",
-        className
-      )}
+      className={cn("whitespace-nowrap", className)}
       {...props}
     >
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger className="flex items-center gap-2 cursor-default">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-muted-foreground"
-            >
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span>{formattedDate}</span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{fullDateTime}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {content}
     </TableCell>
   );
 }

@@ -10,9 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { VipsFilter } from "./components/vips-filter";
-import { PrimaryCell, TechnicalCell, DateTimeCell, EmptyCell } from "@/components/ui/table-cells";
+import { PrimaryCell, TechnicalCell, DateTimeCell, EmptyCell, EmptyValue } from "@/components/ui/table-cells";
 import { EmptyState } from "@/components/empty-state";
 import { FilterSection } from "@/components/ui/FilterSection";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function VipsPage() {
   const router = useRouter();
@@ -71,18 +72,75 @@ export default function VipsPage() {
   // Error and Loading states
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl">VIPs</h1>
-        <Card>
-          <CardHeader>
-            <CardTitle>VIP Devices</CardTitle>
-            <CardDescription>Loading VIPs...</CardDescription>
+      <div className="space-y-8 max-w-7xl mx-auto">
+        {/* Enhanced Page Header */}
+        <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
+          <h1 className="text-3xl tracking-tight">
+            VIPs
+            <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage virtual IP mappings across your Fortinet devices
+          </p>
+        </div>
+        
+        {/* Enhanced Filter Card */}
+        <FilterSection>
+          <Skeleton className="h-10 w-full" />
+        </FilterSection>
+        
+        {/* Enhanced Main Content Card */}
+        <Card className="border shadow-md card-shadow">
+          <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M20.91 8.84 8.56 2.23a1.93 1.93 0 0 0-1.81 0L3.1 4.13a1.93 1.93 0 0 0-.97 1.68v4.62a1.93 1.93 0 0 0 .97 1.68l3.65 1.9"/><path d="m22 17.65-3.37 1.75a1.93 1.93 0 0 1-1.81 0l-3.65-1.9a1.93 1.93 0 0 1-.97-1.68v-4.62a1.93 1.93 0 0 1 .97-1.68l3.65-1.9a1.93 1.93 0 0 1 1.81 0L22 9.37"/></svg>
+                VIP Devices
+              </CardTitle>
+              <CardDescription>
+                <Skeleton className="h-4 w-24" />
+              </CardDescription>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <Skeleton className="h-4 w-32" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          <CardContent className="p-0">
+            <div className="overflow-auto">
+              <Table className="border-collapse">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>VDOM Name</TableHead>
+                    <TableHead>VIP Name</TableHead>
+                    <TableHead>External IP</TableHead>
+                    <TableHead>Mapped IP</TableHead>
+                    <TableHead>External Port</TableHead>
+                    <TableHead>Mapped Port</TableHead>
+                    <TableHead>Protocol</TableHead>
+                    <TableHead>Last Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...Array(pageSize)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="border-t p-4">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-8 w-64" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -108,7 +166,10 @@ export default function VipsPage() {
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Enhanced Page Header */}
       <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
-        <h1 className="text-3xl tracking-tight">VIPs</h1>
+        <h1 className="text-3xl tracking-tight">
+          VIPs
+          <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Manage virtual IP mappings across your Fortinet devices
         </p>
@@ -121,10 +182,9 @@ export default function VipsPage() {
       
       {/* Enhanced Main Content Card */}
       <Card
-        className="border shadow-md"
+        className="border shadow-sm"
         style={{
-          borderColor: 'rgba(26, 32, 53, 0.15)',
-          boxShadow: '0 1px 3px 0 rgba(26, 32, 53, 0.1), 0 1px 2px 0 rgba(26, 32, 53, 0.06)'
+          borderColor: 'rgba(26, 32, 53, 0.15)'
         }}
       >
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
@@ -184,7 +244,7 @@ export default function VipsPage() {
                             {vip.protocol}
                           </Badge>
                         ) : (
-                          <EmptyCell />
+                          <EmptyValue />
                         )}
                       </TableCell>
                       <DateTimeCell date={vip.last_updated} />
@@ -199,7 +259,7 @@ export default function VipsPage() {
           <div className="border-t p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount} VIPs
+                Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalCount)} of {totalCount} VIPs
               </div>
               <DataPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
             </div>

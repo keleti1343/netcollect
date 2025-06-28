@@ -53,8 +53,8 @@
   --popover-foreground: oklch(0.129 0.042 264.695);
   --primary: #4361ee; /* vibrant but professional blue */
   --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: #3f37c9; /* deeper blue for contrast */
-  --secondary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: #2A3452; /* Lighter shade of sidebar for badge */
+  --secondary-foreground: white;
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
   --accent: #4895ef; /* lighter blue for highlights */
@@ -83,7 +83,7 @@
   --neutral: #f1f5f9; /* light gray for backgrounds */
   
   /* Sidebar */
-  --sidebar-bg-start: #1a2035;
+  --sidebar-bg-start: #202A44;
   --sidebar-bg-end: #232a40;
   --sidebar-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
   --sidebar-active-border-left: 3px solid #4a6bfe;
@@ -229,6 +229,7 @@
   
   --hover-card-content-padding: 1rem;
   --hover-card-content-bg: var(--card);
+  --hover-card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   
   --hover-trigger-transition: all 0.2s ease;
   --hover-trigger-bg-hover: var(--primary-foreground);
@@ -289,8 +290,8 @@
   --popover-foreground: oklch(0.984 0.003 247.858);
   --primary: #4361ee;
   --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: #3f37c9;
-  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --secondary: #2A3452;
+  --secondary-foreground: white;
   --muted: oklch(0.279 0.041 260.031);
   --muted-foreground: oklch(0.704 0.04 256.788);
   --accent: #4895ef;
@@ -317,7 +318,7 @@
   --text-secondary: oklch(0.704 0.04 256.788);
   
   /* Sidebar - Dark Mode */
-  --sidebar-bg-start: #1a2035;
+  --sidebar-bg-start: #202A44;
   --sidebar-bg-end: #232a40;
   --sidebar-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
   --sidebar-active-border-left: 3px solid #4a6bfe;
