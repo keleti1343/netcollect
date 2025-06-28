@@ -92,7 +92,7 @@
   --sidebar-inactive-text: oklch(0.7 0.04 256.788); /* muted-foreground */
   --sidebar-inactive-hover-bg: oklch(0.2 0.04 260);
   --sidebar-inactive-hover-text: oklch(0.984 0.003 247.858); /* foreground */
-
+ 
   /* Badge colors */
   --badge-success-bg: color-mix(in srgb, var(--success) 10%, transparent);
   --badge-success-text: var(--success);
@@ -118,53 +118,105 @@
   --badge-protocol-text: oklch(0.5 0.15 245);
   --badge-protocol-border: oklch(0.8 0.1 245 / 30%);
   
+  --badge-firewall-bg: rgba(234, 88, 12, 0.1);
+  --badge-firewall-text: rgb(234, 88, 12);
+  --badge-firewall-border: rgba(234, 88, 12, 0.3);
+  
   --badge-placeholder-bg: oklch(0.95 0.01 0);
   --badge-placeholder-text: oklch(0.3 0.01 0);
   --badge-placeholder-border: oklch(0.8 0.01 0 / 30%);
 
-  /* Typography System */
+  /* Enhanced Typography System */
   --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-monospace: 'Roboto Mono', monospace;
-  --text-primary: oklch(0.129 0.042 264.695); /* foreground */
-  --text-secondary: oklch(0.554 0.046 257.417); /* muted-foreground */
+  --font-mono: 'Roboto Mono', monospace;
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  
+  /* Heading Sizes */
+  --font-size-h1: 2.5rem;    /* 40px */
+  --font-size-h2: 2rem;      /* 32px */
+  --font-size-h3: 1.5rem;    /* 24px */
+  --font-size-h4: 1.25rem;   /* 20px */
+  --font-size-h5: 1.125rem;  /* 18px */
+  
+  /* Body Sizes */
+  --font-size-body-lg: 1.125rem;  /* 18px */
+  --font-size-body: 1rem;         /* 16px */
+  --font-size-body-sm: 0.875rem;  /* 14px */
+  --font-size-caption: 0.75rem;   /* 12px */
+  
+  --font-weight-bold: 700;
+  --font-weight-semibold: 600;
+  --font-weight-regular: 400;
+  
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Letter Spacing */
+  --letter-spacing-tighter: -0.02em;
+  --letter-spacing-tight: -0.01em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.01em;
+  
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
 
-  --h1-font-size: 28px;
-  --h1-font-weight: 700;
-  --h1-letter-spacing: -0.01em;
-
-  --h2-font-size: 22px;
-  --h2-font-weight: 600;
-
-  --h3-font-size: 18px;
-  --h3-font-weight: 600;
-
-  --body-font-size: 14px;
-  --body-font-weight: 400;
-  --body-line-height: 1.5;
-
-  --small-font-size: 12px;
-  --small-font-weight: 400;
-
-  /* Table typography */
-  --table-header-font-size: 0.75rem; /* 12px */
-  --table-header-font-weight: 500;
+  /* Colors from design guide */
+  --color-primary: #4361ee;
+  --color-secondary: #3f37c9;
+  --color-accent: #4895ef;
+  --color-success: #4cb782;
+  --color-warning: #f7b538;
+  --color-error: #e63946;
+  --color-neutral: #f1f5f9;
+ 
+  /* Table standardization */
+  --table-row-height: 3.5rem;
+  --table-header-bg-start: #f8fafc;
+  --table-header-bg-end: #f1f5f9;
+  --table-row-border: #e2e8f0;
+  --table-row-hover-bg: rgba(241, 245, 249, 0.7);
+  
+  /* Typography standardization */
+  --table-header-font-size: 0.75rem;
+  --table-header-font-weight: 600;
   --table-header-letter-spacing: 0.05em;
   --table-header-text-transform: uppercase;
   
-  --table-cell-font-size: 0.875rem; /* 14px */
-  --table-cell-line-height: 1.25rem; /* 20px */
+  --table-cell-font-size: 0.875rem;
+  --table-cell-line-height: 1.25rem;
+  --table-cell-padding-x: 1rem;
+  --table-cell-padding-y: 1rem;
+  --table-cell-text-color: var(--text-primary);
+  --table-cell-primary-font-weight: 500;
+  --table-cell-primary-color: var(--text-primary);
+  --table-cell-background: transparent;
+  --table-cell-border-radius: 0;
   
-  --table-code-font-size: 0.875rem; /* 14px */
+  /* Technical content styling */
+  --table-code-font-size: 0.875rem;
   --table-code-bg: var(--muted);
+  --table-code-text-color: var(--text-primary);
   --table-code-padding-x: 0.5rem;
   --table-code-padding-y: 0.25rem;
   --table-code-border-radius: 0.25rem;
   
-  /* Light theme */
-  --table-row-hover-bg: rgba(241, 245, 249, 0.7);
-  --table-header-bg-start: #f8fafc;
-  --table-header-bg-end: #f1f5f9;
-  --table-row-border: #e2e8f0;
+  /* Empty state standardization */
+  --table-empty-color: var(--muted-foreground);
+  
+  /* Status badge standardization */
+  --badge-unknown-bg: oklch(0.95 0.01 0 / 10%);
+  --badge-unknown-text: oklch(0.4 0.01 0);
+  --badge-unknown-border: oklch(0.8 0.01 0 / 30%);
+  
+  /* Count badge hover effects */
+  --hover-trigger-bg-hover: rgba(0, 0, 0, 0.05);
+  --hover-trigger-transition: background-color 0.2s ease;
+  --hover-card-content-padding: 0.75rem;
 
   /* Hover card */
   --hover-card-width: 20rem; /* 320px */
@@ -181,7 +233,7 @@
   --hover-trigger-transition: all 0.2s ease;
   --hover-trigger-bg-hover: var(--primary-foreground);
   --hover-trigger-transform-hover: translateY(-1px);
-
+ 
   /* Combobox */
   --combobox-height: 2.5rem; /* 40px */
   --combobox-font-size: 0.875rem; /* 14px */
@@ -200,13 +252,27 @@
   --combobox-empty-padding: 3rem 1rem;
   --combobox-empty-text-align: center;
 
-  /* Filter Buttons */
-  --filter-button-primary-bg: var(--primary);
-  --filter-button-primary-text: var(--primary-foreground);
-  --filter-button-primary-hover-bg: color-mix(in srgb, var(--primary) 90%, black);
-  --filter-button-primary-shadow: 0 2px 4px color-mix(in srgb, var(--primary) 20%, transparent);
-  --filter-button-primary-hover-shadow: 0 4px 8px color-mix(in srgb, var(--primary) 30%, transparent);
+  /* Combobox - Light Version of Sidebar Color */
+  --combobox-bg: #5b5b8a; /* Lighter version of sidebar color #2d2d45 */
+  --combobox-text: white;
+  --combobox-hover-bg: #6b6ba0; /* Even lighter for hover state */
 
+  /* Combobox - Match Sidebar Color */
+  --combobox-bg: var(--sidebar-bg-start, #1a2035); /* Match sidebar start color */
+  --combobox-text: white;
+  --combobox-hover-bg: var(--sidebar-bg-end, #232a40); /* Use sidebar end color for hover */
+
+  /* Combobox */
+  --combobox-item-hover-bg: var(--combobox-bg, #1a2035);
+  --combobox-item-hover-text: var(--combobox-text, white);
+ 
+  /* Filter Buttons */
+  --filter-button-primary-bg: var(--sidebar-button-bg, #2d2d45); /* Match sidebar button color */
+  --filter-button-primary-text: white;
+  --filter-button-primary-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --filter-button-primary-hover-bg: var(--sidebar-button-hover-bg, #3c3c5c); /* Match sidebar button hover */
+  --filter-button-primary-hover-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+ 
   --filter-button-secondary-bg: transparent;
   --filter-button-secondary-text: var(--muted-foreground);
   --filter-button-secondary-border: var(--border);
@@ -260,7 +326,7 @@
   --sidebar-inactive-text: oklch(0.7 0.04 256.788); /* muted-foreground */
   --sidebar-inactive-hover-bg: oklch(0.2 0.04 260);
   --sidebar-inactive-hover-text: oklch(0.984 0.003 247.858); /* foreground */
-
+ 
   /* Badge colors for dark mode - adjust lightness and opacity as needed */
   --badge-success-bg: color-mix(in srgb, var(--success) 20%, transparent);
   --badge-success-text: var(--success);
@@ -297,8 +363,46 @@
   --table-row-border: oklch(1 0 0 / 10%);
 
   /* Filter Buttons - Dark Mode */
-  --filter-button-primary-hover-bg: color-mix(in srgb, var(--primary) 80%, white);
+  --sidebar-button-bg: #2d2d45; /* Lighter shade of sidebar color */
+  --sidebar-button-hover-bg: #3c3c5c; /* Even lighter shade for hover */
+  --filter-button-primary-hover-bg: var(--sidebar-button-hover-bg);
   --filter-button-secondary-hover-bg: oklch(1 0 0 / 5%);
+
+  /* Combobox */
+  --combobox-item-hover-bg: color-mix(in srgb, var(--sidebar-bg-start) 15%, transparent);
+}
+
+/* Additional utility classes */
+.table-cell-vertical-middle td {
+  vertical-align: middle;
+}
+
+.table-fixed-layout {
+  table-layout: fixed;
+}
+
+.table-cell-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
+}
+
+/* Enhanced hover card styling */
+.hover-card-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.hover-card-list-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.hover-card-list-item:hover {
+  background-color: var(--muted);
 }
 
 @layer base {
@@ -342,6 +446,102 @@
   .text-muted-foreground {
     color: var(--text-secondary);
   }
+  
+  /* Technical content formatting */
+  .ip-address {
+    font-family: var(--font-mono);
+    background-color: var(--color-neutral);
+    padding: 2px 4px;
+    border-radius: 3px;
+    letter-spacing: -0.02em;
+  }
+  
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  
+  .status-indicator::before {
+    content: "";
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+  }
+  
+  .status-indicator.success::before {
+    background-color: var(--color-success);
+  }
+  
+  .status-indicator.warning::before {
+    background-color: var(--color-warning);
+  }
+  
+  .status-indicator.error::before {
+    background-color: var(--color-error);
+  }
+
+  /* Typography utility classes */
+  .text-h1 {
+    font-size: var(--font-size-h1);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-heading);
+    letter-spacing: var(--letter-spacing-tight);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .text-h2 {
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-heading);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .text-h3 {
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-heading);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .text-body {
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-body);
+    color: var(--text-primary);
+  }
+
+  .text-body-secondary {
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-body);
+    color: var(--text-secondary);
+  }
+
+  .text-small {
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-body);
+    color: var(--text-secondary);
+  }
+
+  .text-mono {
+    font-family: var(--font-mono);
+    letter-spacing: -0.02em;
+  }
+
+  .text-feature-list {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+  }
+
+  .text-feature-list li {
+    margin-bottom: var(--spacing-sm);
+  }
 }
 
 .interactive-element {
@@ -356,4 +556,83 @@
 .interactive-element:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+/* Enhanced Page Header Styles */
+.page-header {
+  @apply mb-8 pb-6 border-b border-gray-200;
+  background: linear-gradient(135deg, rgba(26, 32, 53, 0.02) 0%, rgba(45, 55, 72, 0.02) 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  @apply text-4xl font-bold mb-3;
+  background: linear-gradient(135deg, var(--sidebar-bg) 0%, var(--sidebar-hover) 50%, var(--sidebar-active) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.page-title-icon {
+  @apply w-8 h-8;
+  color: var(--sidebar-bg);
+  filter: drop-shadow(0 2px 4px rgba(26, 32, 53, 0.1));
+}
+
+.page-subtitle {
+  @apply text-lg;
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  margin-top: 0.5rem;
+}
+
+.page-stats {
+  @apply flex items-center gap-6 mt-4 pt-4 border-t border-gray-100;
+}
+
+.page-stat {
+  @apply flex items-center gap-2;
+}
+
+.page-stat-value {
+  @apply font-semibold text-lg;
+  color: var(--sidebar-bg);
+}
+
+.page-stat-label {
+  @apply text-sm;
+  color: var(--text-secondary);
+}
+
+/* Enhanced Card Header Styles */
+.card-header-enhanced {
+  @apply flex items-center justify-between p-6 border-b;
+  background: linear-gradient(135deg, rgba(26, 32, 53, 0.01) 0%, rgba(45, 55, 72, 0.01) 100%);
+  border-bottom: 1px solid rgba(26, 32, 53, 0.1);
+}
+
+.card-title-enhanced {
+  @apply text-xl font-semibold;
+  color: var(--sidebar-bg);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-title-icon {
+  @apply w-5 h-5;
+  color: var(--sidebar-hover);
+}
+
+.card-description-enhanced {
+  @apply text-sm mt-1;
+  color: var(--text-secondary);
 }

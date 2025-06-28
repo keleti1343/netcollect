@@ -3,31 +3,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function Home() {
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl">Welcome to Fortinet Network Visualizer</h1>
+      <h1 className="text-h1">
+        Welcome to Fortinet Network Visualizer
+        <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
+      </h1>
       
-      <Card className="w-full max-w-4xl">
-        <CardHeader>
-          <CardTitle>Project Overview</CardTitle>
-          <CardDescription>A visual interface for Fortinet network configuration data</CardDescription>
+      <Card className="w-full max-w-4xl shadow-sm border border-[var(--color-neutral)]">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-h2">Project Overview</CardTitle>
+          <CardDescription className="text-body-secondary">
+            A visual interface for Fortinet network configuration data
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p>
-            This application connects to Fortinet devices, parses network-specific information, 
-            and stores them in a PostgreSQL database. The information is then retrieved through 
+        <CardContent className="space-y-[var(--spacing-md)]">
+          <p className="text-body">
+            This application connects to Fortinet devices, parses network-specific information,
+            and stores them in a PostgreSQL database. The information is then retrieved through
             an API and displayed by this front-end application.
           </p>
           
-          <h3 className="text-lg font-semibold mt-4">Features</h3>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>View and filter firewall devices</li>
-            <li>Browse VDoms and their associated configurations</li>
-            <li>Explore routing tables with filtering options</li>
-            <li>Inspect network interfaces with status indicators</li>
-            <li>Review Virtual IP configurations</li>
-            <li>Advanced IP address search functionality</li>
+          <h3 className="text-h3 mt-[var(--spacing-lg)]">Features</h3>
+          <ul className="text-feature-list space-y-[var(--spacing-sm)]">
+            <li className="text-body">View and filter firewall devices</li>
+            <li className="text-body">Browse VDoms and their associated configurations</li>
+            <li className="text-body">Explore routing tables with filtering options</li>
+            <li className="text-body">Inspect network interfaces with status indicators</li>
+            <li className="text-body">Review Virtual IP configurations</li>
+            <li className="text-body">Advanced IP address search functionality</li>
           </ul>
           
-          <p className="mt-4">
+          <p className="text-body-secondary mt-[var(--spacing-lg)] pb-2 border-l-2 border-[var(--color-primary)] pl-3 italic">
             Use the sidebar navigation to explore different sections of the application.
           </p>
         </CardContent>

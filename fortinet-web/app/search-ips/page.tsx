@@ -12,10 +12,12 @@ import { searchIPs } from "@/services/api";
 import { InterfaceResponse, RouteResponse, VIPResponse } from "@/types";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
-import { TableCode } from "@/components/ui/table-code"; // Import TableCode
+import { TechnicalCell } from "@/components/ui/table-cells";
+import { TableCode } from "@/components/ui/table-code";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DataPagination } from "@/components/data-pagination"; // Import DataPagination
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
+import { DataPagination } from "@/components/data-pagination";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { EmptyState } from "@/components/empty-state";
 
 export default function SearchIPsPage() {
   const [query, setQuery] = useState("");
@@ -45,6 +47,7 @@ export default function SearchIPsPage() {
     setLoading(true);
     setError(null);
     try {
+      console.log("Initiating search with query:", query);
       const results = await searchIPs({
         query,
         interfaces_skip: (currentInterfacesPage - 1) * pageSize,
@@ -55,9 +58,14 @@ export default function SearchIPsPage() {
         vips_limit: pageSize,
       });
       setSearchResults(results);
+      if (results.interfaces.total_count === 0 &&
+          results.routes.total_count === 0 &&
+          results.vips.total_count === 0) {
+        setError("No results found for your search criteria.");
+      }
     } catch (err) {
       console.error("Failed to search IPs:", err);
-      setError("Failed to perform search. Please try again.");
+      setError("Failed to perform search. Please ensure the API server is running and try again.");
       setSearchResults(null);
     } finally {
       setLoading(false);
@@ -97,7 +105,7 @@ export default function SearchIPsPage() {
       </div>
 
       {/* Enhanced Filter Card (Search Input) */}
-      <Card className="border shadow-md">
+      <Card className="border border-[rgba(26,32,53,0.15)] shadow-md shadow-[rgba(26,32,53,0.05)]">
         <CardHeader className="bg-muted/50 pb-3">
           <CardTitle className="text-lg flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -135,7 +143,11 @@ export default function SearchIPsPage() {
               </Tooltip>
             </TooltipProvider>
           </div>
-          <Button onClick={() => handleSearch()} disabled={loading}>
+          <Button
+            onClick={() => handleSearch()}
+            disabled={loading}
+            className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
+          >
             {loading ? "Searching..." : "Search"}
           </Button>
 
@@ -151,7 +163,7 @@ export default function SearchIPsPage() {
       </Card>
 
       {searchResults && (
-        <Card className="border shadow-md">
+        <Card className="border border-[rgba(26,32,53,0.15)] shadow-md shadow-[rgba(26,32,53,0.05)]">
           <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-lg flex items-center">
@@ -191,48 +203,38 @@ export default function SearchIPsPage() {
                         {searchResults.interfaces.items.map((iface) => (
                           <TableRow key={iface.interface_id} className="hover:bg-muted/20 border-b">
                             <TableCell>
-                              <TableCode>{iface.ip_address || '-'}</TableCode>
-                            </TableCell>
-                            <TableCell className="font-medium">{iface.interface_name}</TableCell>
-                            <TableCell>
-                              {iface.type ? (
-                                <Badge variant="placeholder">
-                                  {iface.type}
-                                </Badge>
-                              ) : (
-                                <Badge variant="placeholder">
-                                  -
-                                </Badge>
-                              )}
+                              <TableCode>{iface.ip_address || '−'}</TableCode>
                             </TableCell>
                             <TableCell>
-                              {iface.vdom?.vdom_name ? (
-                                <Badge variant="vdom">
-                                  {iface.vdom.vdom_name}
-                                </Badge>
-                              ) : (
-                                <Badge variant="placeholder">
-                                  -
-                                </Badge>
-                              )}
+                              <TableCode>{iface.interface_name || '−'}</TableCode>
                             </TableCell>
                             <TableCell>
-                              <Badge
-                                variant={
-                                  iface.status === 'up'
-                                    ? 'success'
-                                    : iface.status === 'down'
-                                    ? 'error'
-                                    : 'warning'
-                                }
-                              >
-                                {iface.status || '-'}
-                              </Badge>
+                              <TableCode>{iface.type || '−'}</TableCode>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center text-sm text-muted-foreground">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <small>{new Date(iface.last_updated).toLocaleString()}</small>
+                              <TableCode>{iface.vdom?.vdom_name || '−'}</TableCode>
+                            </TableCell>
+                            <TableCell>
+                              <TableCode>{iface.status || '−'}</TableCode>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="text-muted-foreground"
+                                >
+                                  <circle cx="12" cy="12" r="10"/>
+                                  <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span>{new Date(iface.last_updated).toLocaleString()}</span>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -277,30 +279,38 @@ export default function SearchIPsPage() {
                         {searchResults.routes.items.map((route) => (
                           <TableRow key={route.route_id} className="hover:bg-muted/20 border-b">
                             <TableCell>
-                              <TableCode>{route.destination_network}/{route.mask_length}</TableCode>
-                            </TableCell>
-                            <TableCell className="font-medium">{route.exit_interface_name}</TableCell>
-                            <TableCell>
-                              <Badge variant="protocol">
-                                {route.route_type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell><TableCode>{route.gateway === 'n/a' ? '-' : route.gateway || '-'}</TableCode></TableCell>
-                            <TableCell>
-                              {route.vdom ? (
-                                <Badge variant="vdom">
-                                  {route.vdom.vdom_name}
-                                </Badge>
-                              ) : (
-                                <Badge variant="placeholder">
-                                  -
-                                </Badge>
-                              )}
+                              <TableCode>{`${route.destination_network}/${route.mask_length}`}</TableCode>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center text-sm text-muted-foreground">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <small>{new Date(route.last_updated).toLocaleString()}</small>
+                              <TableCode>{route.exit_interface_name || '−'}</TableCode>
+                            </TableCell>
+                            <TableCell>
+                              <TableCode>{route.route_type || '−'}</TableCode>
+                            </TableCell>
+                            <TableCell>
+                              <TableCode>{route.gateway === 'n/a' ? '−' : route.gateway}</TableCode>
+                            </TableCell>
+                            <TableCell>
+                              <TableCode>{route.vdom?.vdom_name || '−'}</TableCode>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="text-muted-foreground"
+                                >
+                                  <circle cx="12" cy="12" r="10"/>
+                                  <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span>{new Date(route.last_updated).toLocaleString()}</span>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -344,37 +354,35 @@ export default function SearchIPsPage() {
                         {searchResults.vips.items.map((vip) => (
                           <TableRow key={vip.vip_id} className="hover:bg-muted/20 border-b">
                             <TableCell>
-                              <TableCode>{vip.external_ip}</TableCode>
+                              <TableCode>{vip.external_ip || '−'}</TableCode>
                             </TableCell>
                             <TableCell>
-                              <TableCode>{vip.mapped_ip}</TableCode>
+                              <TableCode>{vip.mapped_ip || '−'}</TableCode>
                             </TableCell>
                             <TableCell>
-                              {vip.vip_type ? (
-                                <Badge variant="placeholder">
-                                  {vip.vip_type}
-                                </Badge>
-                              ) : (
-                                <Badge variant="placeholder">
-                                  -
-                                </Badge>
-                              )}
+                              <TableCode>{vip.vip_type || '−'}</TableCode>
                             </TableCell>
                             <TableCell>
-                              {vip.vdom ? (
-                                <Badge variant="vdom">
-                                  {vip.vdom.vdom_name}
-                                </Badge>
-                              ) : (
-                                <Badge variant="placeholder">
-                                  -
-                                </Badge>
-                              )}
+                              <TableCode>{vip.vdom?.vdom_name || '−'}</TableCode>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center text-sm text-muted-foreground">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <small>{new Date(vip.last_updated).toLocaleString()}</small>
+                              <div className="flex items-center gap-2">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="text-muted-foreground"
+                                >
+                                  <circle cx="12" cy="12" r="10"/>
+                                  <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span>{new Date(vip.last_updated).toLocaleString()}</span>
                               </div>
                             </TableCell>
                           </TableRow>

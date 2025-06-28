@@ -89,11 +89,30 @@ export async function searchIPs(params: {
   if (params.vips_limit !== undefined) queryParams.set('vips.limit', params.vips_limit.toString());
 
   const url = `${API_BASE_URL}/search/ip?${queryParams.toString()}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error(`Failed to search IPs: ${response.status} ${response.statusText}`, errorData);
-    throw new Error(`Failed to search IPs: ${response.status} ${response.statusText}`);
+  
+  try {
+    console.log(`Attempting to fetch from URL: ${url}`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`Failed to search IPs: ${response.status} ${response.statusText}`, errorData);
+      throw new Error(`Failed to search IPs: ${response.status} ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Network error when searching IPs:', error);
+    // Return empty results instead of throwing, to avoid crashing the UI
+    return {
+      interfaces: { items: [], total_count: 0 },
+      routes: { items: [], total_count: 0 },
+      vips: { items: [], total_count: 0 }
+    };
   }
-  return response.json();
 }

@@ -70,7 +70,7 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
         <Popover open={vdomOpen} onOpenChange={setVdomOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="outline"
+              variant="combobox"
               role="combobox"
               aria-expanded={vdomOpen}
               className="w-[250px] justify-between shadow-sm"

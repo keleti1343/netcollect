@@ -5,7 +5,10 @@ import { RoutesFilter } from "./components/routes-filter";
 import { getRoutes, getVdoms } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TableCode } from "@/components/ui/table-code"; // Import TableCode
+import { PrimaryCell, TechnicalCell } from "@/components/ui/table-cells";
+import { TableCode } from "@/components/ui/table-code";
+import { EmptyState } from "@/components/empty-state";
+import { FilterSection } from "@/components/ui/FilterSection";
 
 export default async function RoutesPage({
   searchParams
@@ -47,20 +50,18 @@ export default async function RoutesPage({
       </div>
       
       {/* Enhanced Filter Card */}
-      <Card className="border shadow-md">
-        <CardHeader className="bg-muted/50 pb-3">
-          <CardTitle className="text-lg flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            Filter Options
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <RoutesFilter vdoms={vdoms} initialVdomId={vdom_id} />
-        </CardContent>
-      </Card>
+      <FilterSection>
+        <RoutesFilter vdoms={vdoms} initialVdomId={vdom_id} />
+      </FilterSection>
       
       {/* Enhanced Main Content Card */}
-      <Card className="border shadow-md">
+      <Card
+        className="border shadow-md"
+        style={{
+          borderColor: 'rgba(26, 32, 53, 0.15)',
+          boxShadow: '0 1px 3px 0 rgba(26, 32, 53, 0.1), 0 1px 2px 0 rgba(26, 32, 53, 0.06)'
+        }}
+      >
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-lg flex items-center">
@@ -71,25 +72,23 @@ export default async function RoutesPage({
               Total: {totalCount} routes
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-muted-foreground">
-              {routes.length > 0 ?
-                `Showing ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of {totalCount}` :
-                'No routes found'}
-            </div>
+          <div className="text-sm text-muted-foreground">
+            {routes.length > 0
+              ? `Showing ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of ${totalCount}`
+              : 'No routes found'}
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-auto">
             <Table className="border-collapse">
-              <TableHeader className="bg-muted/50">
-                <TableRow className="hover:bg-muted/20">
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Route Type</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Destination</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Gateway</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Exit Interface</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDom</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Route Type</TableHead>
+                  <TableHead>Destination</TableHead>
+                  <TableHead>Gateway</TableHead>
+                  <TableHead>Exit Interface</TableHead>
+                  <TableHead>VDom</TableHead>
+                  <TableHead>Last Updated</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -101,36 +100,30 @@ export default async function RoutesPage({
                   </TableRow>
                 ) : (
                   routes.map((route, index) => (
-                    <TableRow key={`${route.route_id}-${index}-${route.destination_network}`} className="hover:bg-muted/20 border-b">
+                    <TableRow key={`${route.route_id}-${index}-${route.destination_network}`}>
+                      <TechnicalCell value={route.route_type} />
+                      <TechnicalCell value={`${route.destination_network}/${route.mask_length}`} />
+                      <TechnicalCell value={route.gateway} />
+                      <TechnicalCell value={route.exit_interface_name} />
+                      <TechnicalCell value={route.vdom ? route.vdom.vdom_name : '−'} />
                       <TableCell>
-                        <Badge variant="protocol">
-                          {route.route_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <TableCode>
-                          {route.destination_network}/{route.mask_length}
-                        </TableCode>
-                      </TableCell>
-                      <TableCell>
-                        <TableCode>{route.gateway && route.gateway !== 'None' && route.gateway !== 'n/a' ? route.gateway : '-'}</TableCode>
-                      </TableCell>
-                      <TableCell className="font-medium">{route.exit_interface_name}</TableCell>
-                      <TableCell>
-                        {route.vdom ? (
-                          <Badge variant="vdom">
-                            {route.vdom.vdom_name}
-                          </Badge>
-                        ) : (
-                          <Badge variant="placeholder">
-                            -
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          <span className="text-sm">{new Date(route.last_updated).toLocaleString()}</span>
+                        <div className="flex items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-muted-foreground"
+                          >
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          <span>{new Date(route.last_updated).toLocaleString()}</span>
                         </div>
                       </TableCell>
                     </TableRow>

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List # Import List
 from datetime import datetime
 from .vdom import VDOMResponse # Import VDOMResponse
@@ -30,8 +30,7 @@ class VIPResponse(VIPBase):
     last_updated: datetime
     vdom: Optional[VDOMResponse] = None # Add vdom field
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class VIPPaginationResponse(BaseModel):
     items: List[VIPResponse]

@@ -46,8 +46,13 @@ def search_ip(
         db, ip_address_query=query, skip=vips_skip, limit=vips_limit
     )
 
+    # Convert interfaces to response models - ensures proper serialization
+    interface_responses = [InterfaceResponse.from_orm(iface) for iface in interfaces]
+    route_responses = [RouteResponse.from_orm(route) for route in routes]
+    vip_responses = [VIPResponse.from_orm(vip) for vip in vips]
+
     return {
-        "interfaces": {"items": interfaces, "total_count": interfaces_total_count},
-        "routes": {"items": routes, "total_count": routes_total_count},
-        "vips": {"items": vips, "total_count": vips_total_count}
+        "interfaces": {"items": interface_responses, "total_count": interfaces_total_count},
+        "routes": {"items": route_responses, "total_count": routes_total_count},
+        "vips": {"items": vip_responses, "total_count": vips_total_count}
     }

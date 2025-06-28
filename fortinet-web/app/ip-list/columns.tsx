@@ -15,7 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import { TechnicalCell } from "@/components/ui/table-cells"
 import { InterfaceResponse } from "@/types"
+import { PlaceholderValue } from "@/components/ui/placeholder-value";
+import { HoverCardHeader } from "@/components/ui/hover-card-header";
 
 export const columns: ColumnDef<InterfaceResponse>[] = [
   {
@@ -59,64 +62,44 @@ export const columns: ColumnDef<InterfaceResponse>[] = [
     accessorKey: "ip_address",
     header: "IP Address",
     cell: ({ row }) => (
-      <div>
-        {row.original.ip_address ? (
-          <code className="px-2 py-1 bg-muted rounded text-sm">{row.original.ip_address}</code>
-        ) : (
-          '-'
-        )}
-      </div>
+      <PlaceholderValue value={row.original.ip_address} useCode />
     ),
   },
   {
     accessorKey: "vdom.vdom_name",
     header: "VDOM Name",
-    cell: ({ row }) => <div>{row.original.vdom?.vdom_name || '-'}</div>,
+    cell: ({ row }) => <PlaceholderValue value={row.original.vdom?.vdom_name} />,
   },
   {
     accessorKey: "description",
     header: "Description",
     cell: ({ row }) => (
-      <div>
-        {row.original.description ? (
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <Badge variant="outline" className="cursor-help flex items-center space-x-1 hover:bg-primary/10">
-                <span className="w-2 h-2 bg-primary rounded-full"></span>
-                <span>Description</span>
-              </Badge>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-80 p-0">
-              <div className="bg-muted/50 p-3 border-b">
-                <h4 className="font-semibold">Interface Description</h4>
-              </div>
-              <div className="p-3">
-                <p className="text-sm">{row.original.description}</p>
-              </div>
-            </HoverCardContent>
-          </HoverCard>
-        ) : (
-          '-'
-        )}
-      </div>
+      row.original.description ? (
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Badge variant="info" className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+              Description
+            </Badge>
+          </HoverCardTrigger>
+          <HoverCardContent className="p-0">
+            <HoverCardHeader>
+              <h4 className="font-medium">Interface Description</h4>
+            </HoverCardHeader>
+            <div className="p-[var(--hover-card-content-padding)]">
+              <p className="text-sm">{row.original.description}</p>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      ) : (
+        <PlaceholderValue value={row.original.description} />
+      )
     ),
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge
-        variant="outline"
-        className={
-          row.original.status === 'up'
-            ? 'bg-green-500 text-white'
-            : row.original.status === 'down'
-            ? 'bg-red-500 text-white'
-            : 'bg-blue-500 text-white'
-        }
-      >
-        {row.original.status || 'unknown'}
-      </Badge>
+      <TechnicalCell value={row.original.status || '−'} />
     ),
   },
   {

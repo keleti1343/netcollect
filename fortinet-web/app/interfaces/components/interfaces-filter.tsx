@@ -85,7 +85,7 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
         <Popover open={vdomOpen} onOpenChange={setVdomOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="outline"
+              variant="combobox"
               role="combobox"
               aria-expanded={vdomOpen}
               className="w-[250px] justify-between shadow-sm"

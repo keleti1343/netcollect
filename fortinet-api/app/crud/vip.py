@@ -66,19 +66,46 @@ def delete_vip(db: Session, vip_id: int) -> bool:
     db.commit()
     return True
 
+import ipaddress
+from typing import Tuple, List, Optional
+from sqlalchemy.orm import Session, joinedload
+from app.models.vip import VIP
+from app.utils.ip_utils import parse_ip_query, ip_is_in_network
+
 def search_vips_by_ip(
     db: Session,
     ip_address_query: str,
     skip: int = 0,
-    limit: int = 15 # Default limit to 15 as per requirement
+    limit: int = 15
 ) -> Tuple[List[VIP], int]:
-    # Search for VIPs where external_ip or mapped_ip contains the query string
-    query = db.query(VIP).options(joinedload(VIP.vdom)) # Eager load VDOM
-    query = query.filter(
-        (VIP.external_ip.ilike(f"%{ip_address_query}%")) |
-        (VIP.mapped_ip.ilike(f"%{ip_address_query}%"))
-    )
+    # Parse the query string
+    network, is_cidr = parse_ip_query(ip_address_query)
     
-    total_count = query.count()
-    vips = query.offset(skip).limit(limit).all()
-    return vips, total_count
+    # Base query with eager loading
+    base_query = db.query(VIP).options(joinedload(VIP.vdom))
+    
+    if network and is_cidr:
+        # For CIDR notation, fetch all potential matches first
+        potential_matches = base_query.all()
+        
+        # Filter VIPs where either external_ip or mapped_ip is in the network
+        matches = [
+            vip for vip in potential_matches
+            if (vip.external_ip and ip_is_in_network(vip.external_ip, network)) or
+               (vip.mapped_ip and ip_is_in_network(vip.mapped_ip, network))
+        ]
+        
+        # Handle pagination manually
+        total_count = len(matches)
+        paginated_results = matches[skip:skip + limit] if skip < len(matches) else []
+        
+        return paginated_results, total_count
+    else:
+        # Fall back to the original string-based search
+        query = base_query.filter(
+            (VIP.external_ip.ilike(f"%{ip_address_query}%")) |
+            (VIP.mapped_ip.ilike(f"%{ip_address_query}%"))
+        )
+        total_count = query.count()
+        vips = query.offset(skip).limit(limit).all()
+        return vips, total_count

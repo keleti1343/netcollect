@@ -68,7 +68,7 @@ export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
         <Popover open={vdomOpen} onOpenChange={setVdomOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="outline"
+              variant="combobox"
               role="combobox"
               aria-expanded={vdomOpen}
               className="w-[250px] justify-between shadow-sm"
@@ -119,9 +119,8 @@ export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
           Apply Filter
         </Button>
         <Button
-          variant="outline"
+          variant="sidebar-outline"
           onClick={handleClearFilter}
-          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] transition-all"
         >
           Clear
         </Button>

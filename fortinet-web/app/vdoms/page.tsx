@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableCode } from "@/components/ui/table-code";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DataPagination } from "@/components/data-pagination";
 import { VdomsFilter } from "./components/vdoms-filter";
@@ -9,7 +10,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge"; // Import Badge
 import { Button } from "@/components/ui/button";
 import { HoverCardHeader } from "@/components/ui/hover-card-header"; // Import HoverCardHeader
-import { TableCode } from "@/components/ui/table-code"; // Import TableCode
+import { PrimaryCell, CountCell, DateTimeCell, TechnicalCell } from "@/components/ui/table-cells"; // Import TechnicalCell at top level
+import { EmptyState } from "@/components/empty-state";
+import { FilterSection } from "@/components/ui/FilterSection";
 
 export default async function VdomsPage({
   searchParams
@@ -20,7 +23,7 @@ export default async function VdomsPage({
   const fw_name = searchParamsObj.fw_name;
   const vdom_name = searchParamsObj.vdom_name;
   const page = searchParamsObj.page ? Number(searchParamsObj.page) : 1;
-  const pageSize = searchParamsObj.pageSize ? Number(searchParamsObj.pageSize) : 15;
+  const pageSize = searchParamsObj.pageSize ? Number(searchParams.pageSize) : 15;
 
   const filters: Record<string, string> = {};
   if (fw_name) filters.fw_name = fw_name;
@@ -38,6 +41,73 @@ export default async function VdomsPage({
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
+  // Nested components for Interfaces, VIPs, and Routes lists
+  async function InterfacesList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
+    const { items: interfaces } = await getInterfaces({ vdom_id: vdomId.toString() });
+
+    return (
+      <div className="space-y-2">
+        <ScrollArea className="h-[200px] w-full">
+          <ul className="list-disc pl-4">
+            {interfaces.length > 0 ? (
+              interfaces.map((iface: InterfaceResponse) => (
+                <li key={iface.interface_id}>
+                  {iface.interface_name} - <TableCode>{iface.ip_address}</TableCode>
+                </li>
+              ))
+            ) : (
+              <li>No interfaces found</li>
+            )}
+          </ul>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  async function VipsList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
+    const { items: vips } = await getVips({ vdom_id: vdomId.toString() });
+
+    return (
+      <div className="space-y-2">
+        <ScrollArea className="h-[200px] w-full">
+          <ul className="list-disc pl-4">
+            {vips.length > 0 ? (
+              vips.map((vip: VIPResponse) => (
+                <li key={vip.vip_id}>
+                  <TableCode>{vip.external_ip}</TableCode> → <TableCode>{vip.mapped_ip}</TableCode>
+                </li>
+              ))
+            ) : (
+              <li>No VIPs found</li>
+            )}
+          </ul>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  async function RoutesList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
+    const { items: routes } = await getRoutes({ vdom_id: vdomId.toString() });
+
+    return (
+      <div className="space-y-2">
+        <ScrollArea className="h-[200px] w-full">
+          <ul className="list-disc pl-4">
+            {routes.length > 0 ? (
+              routes.map((route: RouteResponse) => (
+                <li key={route.route_id}>
+                  <TableCode>{route.destination_network}/{route.mask_length}</TableCode> via <TableCode>{route.gateway || route.exit_interface_name}</TableCode>
+                </li>
+              ))
+            ) : (
+              <li>No routes found</li>
+            )}
+          </ul>
+        </ScrollArea>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Enhanced Page Header */}
@@ -49,24 +119,22 @@ export default async function VdomsPage({
       </div>
       
       {/* Enhanced Filter Card */}
-      <Card className="border shadow-md">
-        <CardHeader className="bg-muted/50 pb-3">
-          <CardTitle className="text-lg flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            Filter Options
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <VdomsFilter
-            firewalls={firewalls}
-            initialFwName={fw_name}
-            initialVdomName={vdom_name}
-          />
-        </CardContent>
-      </Card>
+      <FilterSection>
+        <VdomsFilter
+          firewalls={firewalls}
+          initialFwName={fw_name}
+          initialVdomName={vdom_name}
+        />
+      </FilterSection>
       
       {/* Enhanced Main Content Card */}
-      <Card className="border shadow-md">
+      <Card
+        className="border shadow-md"
+        style={{
+          borderColor: 'rgba(26, 32, 53, 0.15)',
+          boxShadow: '0 1px 3px 0 rgba(26, 32, 53, 0.1), 0 1px 2px 0 rgba(26, 32, 53, 0.06)'
+        }}
+      >
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-lg flex items-center">
@@ -77,25 +145,23 @@ export default async function VdomsPage({
               Total: {totalCount} virtual domains
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-muted-foreground">
-              {vdoms.length > 0 ?
-                `Showing ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of ${totalCount}` :
-                'No VDom found'}
-            </div>
+          <div className="text-sm text-muted-foreground">
+            {vdoms.length > 0
+              ? `Showing ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of ${totalCount}`
+              : 'No VDom found'}
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-auto">
             <Table className="border-collapse">
-              <TableHeader className="bg-muted/50">
-                <TableRow className="hover:bg-muted/20">
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDom Name</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Firewall</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Interfaces</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VIPs</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Routes</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>VDom Name</TableHead>
+                  <TableHead>Firewall</TableHead>
+                  <TableHead>Interfaces</TableHead>
+                  <TableHead>VIPs</TableHead>
+                  <TableHead>Routes</TableHead>
+                  <TableHead>Last Updated</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -107,74 +173,88 @@ export default async function VdomsPage({
                   </TableRow>
                 ) : (
                   vdoms.map((vdom) => (
-                    <TableRow key={vdom.vdom_id} className="hover:bg-muted/20 border-b">
-                      <TableCell className="font-medium">{vdom.vdom_name}</TableCell>
+                    <TableRow key={vdom.vdom_id}>
+                      <TechnicalCell value={vdom.vdom_name} />
                       <TableCell>
                         {vdom.firewall?.fw_name ? (
-                          <Badge variant="placeholder">
+                          <TableCode>
                             {vdom.firewall.fw_name}
-                          </Badge>
+                          </TableCode>
                         ) : (
-                          <Badge variant="placeholder">
+                          <TableCode>
                             -
-                          </Badge>
+                          </TableCode>
                         )}
                       </TableCell>
+                      <HoverCard>
+                        <HoverCardTrigger asChild>
+                          <TableCell className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+                            <TableCode>
+                              {vdom.total_interfaces} interfaces
+                            </TableCode>
+                          </TableCell>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="p-0">
+                          <HoverCardHeader>
+                            <h4 className="font-medium">Interfaces for {vdom.vdom_name}</h4>
+                          </HoverCardHeader>
+                          <div className="p-[var(--hover-card-content-padding)]">
+                            <InterfacesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                      <HoverCard>
+                        <HoverCardTrigger asChild>
+                          <TableCell className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+                            <TableCode>
+                              {vdom.total_vips} VIPs
+                            </TableCode>
+                          </TableCell>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="p-0">
+                          <HoverCardHeader>
+                            <h4 className="font-medium">VIPs for {vdom.vdom_name}</h4>
+                          </HoverCardHeader>
+                          <div className="p-[var(--hover-card-content-padding)]">
+                            <VipsList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                      <HoverCard>
+                        <HoverCardTrigger asChild>
+                          <TableCell className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+                            <TableCode>
+                              {vdom.total_routes} routes
+                            </TableCode>
+                          </TableCell>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="p-0">
+                          <HoverCardHeader>
+                            <h4 className="font-medium">Routes for {vdom.vdom_name}</h4>
+                          </HoverCardHeader>
+                          <div className="p-[var(--hover-card-content-padding)]">
+                            <RoutesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
                       <TableCell>
-                        <HoverCard>
-                          <HoverCardTrigger asChild>
-                            <Badge variant="info" count={vdom.total_interfaces || 0} className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
-                              Interfaces
-                            </Badge>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="p-0">
-                            <HoverCardHeader>
-                              <h4 className="font-medium">Interfaces for {vdom.vdom_name}</h4>
-                            </HoverCardHeader>
-                            <div className="p-[var(--hover-card-content-padding)]">
-                              <InterfacesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      </TableCell>
-                      <TableCell>
-                        <HoverCard>
-                          <HoverCardTrigger asChild>
-                            <Badge variant="info" count={vdom.total_vips || 0} className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
-                              VIPs
-                            </Badge>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="p-0">
-                            <HoverCardHeader>
-                              <h4 className="font-medium">VIPs for {vdom.vdom_name}</h4>
-                            </HoverCardHeader>
-                            <div className="p-[var(--hover-card-content-padding)]">
-                              <VipsList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      </TableCell>
-                      <TableCell>
-                        <HoverCard>
-                          <HoverCardTrigger asChild>
-                            <Badge variant="info" count={vdom.total_routes || 0} className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
-                              Routes
-                            </Badge>
-                          </HoverCardTrigger>
-                          <HoverCardContent className="p-0">
-                            <HoverCardHeader>
-                              <h4 className="font-medium">Routes for {vdom.vdom_name}</h4>
-                            </HoverCardHeader>
-                            <div className="p-[var(--hover-card-content-padding)]">
-                              <RoutesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          <small>{new Date(vdom.last_updated).toLocaleString()}</small>
+                        <div className="flex items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="text-muted-foreground"
+                          >
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          <span>{new Date(vdom.last_updated).toLocaleString()}</span>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -195,76 +275,6 @@ export default async function VdomsPage({
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-async function InterfacesList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
-  const { items: interfaces } = await getInterfaces({ vdom_id: vdomId.toString() });
-
-  return (
-    <div className="space-y-2">
-      <ScrollArea className="h-[200px] w-full">
-        <ul className="list-disc pl-4">
-          {interfaces.length > 0 ? (
-            interfaces.map((iface: InterfaceResponse) => (
-              <li key={iface.interface_id}>
-                {iface.interface_name} - <TableCode>{iface.ip_address || '-'}</TableCode>
-              </li>
-            ))
-          ) : (
-            <li>No interfaces found</li>
-          )}
-        </ul>
-      </ScrollArea>
-    </div>
-  );
-}
-
-async function VipsList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
-  const { items: vips } = await getVips({ vdom_id: vdomId.toString() });
-
-  return (
-    <div className="space-y-2">
-      <ScrollArea className="h-[200px] w-full">
-        <ul className="list-disc pl-4">
-          {vips.length > 0 ? (
-            vips.map((vip: VIPResponse) => (
-              <li key={vip.vip_id}>
-                <TableCode>{vip.external_ip}</TableCode> → <TableCode>{vip.mapped_ip}</TableCode>
-              </li>
-            ))
-          ) : (
-            <li>No VIPs found</li>
-          )}
-        </ul>
-      </ScrollArea>
-    </div>
-  );
-}
-
-async function RoutesList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
-  const { items: routes } = await getRoutes({ vdom_id: vdomId.toString() });
-
-  return (
-    <div className="space-y-2">
-      <ScrollArea className="h-[200px] w-full">
-        <ul className="list-disc pl-4">
-          {routes.length > 0 ? (
-            routes.map((route: RouteResponse) => (
-              <li key={route.route_id}>
-                <TableCode>{route.destination_network}/{route.mask_length}</TableCode> via {route.gateway ? (
-                  <TableCode>{route.gateway}</TableCode>
-                ) : (
-                  <TableCode>{route.exit_interface_name}</TableCode>
-                )}
-              </li>
-            ))
-          ) : (
-            <li>No routes found</li>
-          )}
-        </ul>
-      </ScrollArea>
     </div>
   );
 }

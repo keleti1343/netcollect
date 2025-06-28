@@ -82,10 +82,13 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
         <Popover open={fwNameOpen} onOpenChange={setFwNameOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="outline"
+              variant="combobox"
               role="combobox"
               aria-expanded={fwNameOpen}
-              className="w-[250px] justify-between shadow-sm"
+              className={cn(
+                "w-[250px] justify-between shadow-sm",
+                selectedFwName && "bg-[var(--combobox-item-hover-bg)] text-accent-foreground"
+              )}
               id="fw-name-filter"
             >
               {selectedFwName
@@ -155,10 +158,13 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
         <Popover open={vdomsOpen} onOpenChange={setVdomsOpen}>
           <PopoverTrigger asChild disabled={!selectedFwName || isLoadingVdoms}>
             <Button
-              variant="outline"
+              variant="combobox"
               role="combobox"
               aria-expanded={vdomsOpen}
-              className="w-[250px] justify-between shadow-sm"
+              className={cn(
+                "w-[250px] justify-between shadow-sm",
+                vdomName && "bg-[var(--combobox-item-hover-bg)] text-accent-foreground"
+              )}
               id="vdom-name-filter"
             >
               {isLoadingVdoms ? (

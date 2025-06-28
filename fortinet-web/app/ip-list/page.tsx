@@ -7,9 +7,10 @@ import { IpListFilter } from "./components/ip-list-filter";
 import { Badge } from "@/components/ui/badge";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
-import { TableCode } from "@/components/ui/table-code"; // Import TableCode
-import { HoverCardHeader } from "@/components/ui/hover-card-header"; // Import HoverCardHeader
-import { EmptyState } from "@/components/empty-state"; // Import EmptyState
+import { TechnicalCell } from "@/components/ui/table-cells";
+import { HoverCardHeader } from "@/components/ui/hover-card-header";
+import { EmptyState } from "@/components/empty-state";
+import { PlaceholderValue } from "@/components/ui/placeholder-value";
 
 export default async function IpListPage({
   searchParams,
@@ -110,18 +111,10 @@ export default async function IpListPage({
                     <TableRow key={iface.interface_id} className="hover:bg-muted/20 border-b">
                       <TableCell className="font-medium">{iface.interface_name}</TableCell>
                       <TableCell>
-                        <TableCode>{iface.ip_address || '-'}</TableCode>
+                        <PlaceholderValue value={iface.ip_address} useCode />
                       </TableCell>
                       <TableCell>
-                        {iface.vdom?.vdom_name ? (
-                          <Badge variant="vdom">
-                            {iface.vdom.vdom_name}
-                          </Badge>
-                        ) : (
-                          <Badge variant="placeholder">
-                            -
-                          </Badge>
-                        )}
+                        <PlaceholderValue value={iface.vdom?.vdom_name} />
                       </TableCell>
                       <TableCell>
                         {iface.description ? (
@@ -141,24 +134,10 @@ export default async function IpListPage({
                             </HoverCardContent>
                           </HoverCard>
                         ) : (
-                          <Badge variant="placeholder">
-                            -
-                          </Badge>
+                          <PlaceholderValue value={iface.description} />
                         )}
                       </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            iface.status === 'up'
-                              ? 'success'
-                              : iface.status === 'down'
-                              ? 'error'
-                              : 'warning'
-                          }
-                        >
-                          {iface.status || 'unknown'}
-                        </Badge>
-                      </TableCell>
+                      <TechnicalCell value={iface.status || '−'} />
                       <TableCell>
                         <div className="flex items-center text-sm text-muted-foreground">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>

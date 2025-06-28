@@ -7,10 +7,12 @@ import { getVips, getVdoms } from "@/services/api";
 import { VIPResponse, VDOMResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TableCode } from "@/components/ui/table-code"; // Import TableCode
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { VipsFilter } from "./components/vips-filter"; // Import the new filter component
+import { VipsFilter } from "./components/vips-filter";
+import { PrimaryCell, TechnicalCell, DateTimeCell, EmptyCell } from "@/components/ui/table-cells";
+import { EmptyState } from "@/components/empty-state";
+import { FilterSection } from "@/components/ui/FilterSection";
 
 export default function VipsPage() {
   const router = useRouter();
@@ -113,20 +115,18 @@ export default function VipsPage() {
       </div>
       
       {/* Enhanced Filter Card */}
-      <Card className="border shadow-md">
-        <CardHeader className="bg-muted/50 pb-3">
-          <CardTitle className="text-lg flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            Filter Options
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <VipsFilter vdoms={vdoms} initialVdomId={vdom_id} />
-        </CardContent>
-      </Card>
+      <FilterSection>
+        <VipsFilter vdoms={vdoms} initialVdomId={vdom_id} />
+      </FilterSection>
       
       {/* Enhanced Main Content Card */}
-      <Card className="border shadow-md">
+      <Card
+        className="border shadow-md"
+        style={{
+          borderColor: 'rgba(26, 32, 53, 0.15)',
+          boxShadow: '0 1px 3px 0 rgba(26, 32, 53, 0.1), 0 1px 2px 0 rgba(26, 32, 53, 0.06)'
+        }}
+      >
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-lg flex items-center">
@@ -137,27 +137,25 @@ export default function VipsPage() {
               Total: {totalCount} virtual IPs
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-muted-foreground">
-              {vips.length > 0 ?
-                `Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalCount)} of ${totalCount}` :
-                'No VIPs found'}
-            </div>
+          <div className="text-sm text-muted-foreground">
+            {vips.length > 0
+              ? `Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalCount)} of ${totalCount}`
+              : 'No VIPs found'}
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-auto">
             <Table className="border-collapse">
-              <TableHeader className="bg-muted/50">
-                <TableRow className="hover:bg-muted/20">
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDOM Name</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VIP Name</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">External IP</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Mapped IP</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">External Port</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Mapped Port</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Protocol</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>VDOM Name</TableHead>
+                  <TableHead>VIP Name</TableHead>
+                  <TableHead>External IP</TableHead>
+                  <TableHead>Mapped IP</TableHead>
+                  <TableHead>External Port</TableHead>
+                  <TableHead>Mapped Port</TableHead>
+                  <TableHead>Protocol</TableHead>
+                  <TableHead>Last Updated</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -169,50 +167,27 @@ export default function VipsPage() {
                   </TableRow>
                 ) : (
                   vips.map((vip) => (
-                    <TableRow key={vip.vip_id} className="hover:bg-muted/20 border-b">
-                      <TableCell>
-                        {vip.vdom?.vdom_name ? (
-                          <Badge variant="vdom">
-                            {vip.vdom.vdom_name}
-                          </Badge>
-                        ) : (
-                          <Badge variant="placeholder">
-                            -
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {vip.vip_name || '-'}
-                      </TableCell>
-                      <TableCell>
-                        <TableCode>{vip.external_ip}</TableCode>
-                      </TableCell>
-                      <TableCell>
-                        <TableCode>{vip.mapped_ip}</TableCode>
-                      </TableCell>
-                      <TableCell>
-                        <TableCode>{vip.external_port || '-'}</TableCode>
-                      </TableCell>
-                      <TableCell>
-                        <TableCode>{vip.mapped_port || '-'}</TableCode>
-                      </TableCell>
+                    <TableRow key={vip.vip_id}>
+                      {vip.vdom?.vdom_name ? (
+                        <TechnicalCell value={vip.vdom.vdom_name} />
+                      ) : (
+                        <EmptyCell />
+                      )}
+                      <TechnicalCell value={vip.vip_name} />
+                      <TechnicalCell value={vip.external_ip} />
+                      <TechnicalCell value={vip.mapped_ip} />
+                      <TechnicalCell value={vip.external_port} />
+                      <TechnicalCell value={vip.mapped_port} />
                       <TableCell>
                         {vip.protocol ? (
                           <Badge variant="protocol">
                             {vip.protocol}
                           </Badge>
                         ) : (
-                          <Badge variant="placeholder">
-                            -
-                          </Badge>
+                          <EmptyCell />
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 text-muted-foreground"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          <small>{new Date(vip.last_updated).toLocaleString()}</small>
-                        </div>
-                      </TableCell>
+                      <DateTimeCell date={vip.last_updated} />
                     </TableRow>
                   ))
                 )}

@@ -2,6 +2,8 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
+export type { VariantProps }
+
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
@@ -26,6 +28,7 @@ const badgeVariants = cva(
         vdom: "border-[var(--badge-vdom-border)] bg-[var(--badge-vdom-bg)] text-[var(--badge-vdom-text)] [a&]:hover:bg-[var(--badge-vdom-bg)/80]",
         protocol: "border-[var(--badge-protocol-border)] bg-[var(--badge-protocol-bg)] text-[var(--badge-protocol-text)] [a&]:hover:bg-[var(--badge-protocol-bg)/80]",
         placeholder: "border-[var(--badge-placeholder-border)] bg-[var(--badge-placeholder-bg)] text-[var(--badge-placeholder-text)] [a&]:hover:bg-[var(--badge-placeholder-bg)/80]",
+        firewall: "border-[var(--badge-firewall-border)] bg-[var(--badge-firewall-bg)] text-[var(--badge-firewall-text)] [a&]:hover:bg-[var(--badge-firewall-bg)/80]",
       },
     },
     defaultVariants: {

@@ -104,7 +104,7 @@ const options = await Promise.all(firewalls.map(async (fw) => {
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
-              variant="outline"
+              variant="combobox"
               role="combobox"
               aria-expanded={open}
               className="w-[250px] justify-between shadow-sm"

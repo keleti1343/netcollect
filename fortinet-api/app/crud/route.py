@@ -94,17 +94,53 @@ def delete_route(db: Session, route_id: int) -> bool:
     db.commit()
     return True
 
+import ipaddress
+from typing import Tuple, List, Optional
+from sqlalchemy.orm import Session, joinedload
+from app.models.route import Route
+from app.utils.ip_utils import parse_ip_query, ip_is_in_network
+
 def search_routes_by_ip(
     db: Session,
     ip_address_query: str,
     skip: int = 0,
-    limit: int = 15 # Default limit to 15 as per requirement
+    limit: int = 15
 ) -> Tuple[List[Route], int]:
-    query = db.query(Route).options(joinedload(Route.vdom))
+    # Parse the query string
+    network, is_cidr = parse_ip_query(ip_address_query)
     
-    # Search for routes where destination_network contains the query string
-    query = query.filter(Route.destination_network.ilike(f"%{ip_address_query}%"))
+    # Base query with eager loading
+    base_query = db.query(Route).options(joinedload(Route.vdom))
     
-    total_count = query.count()
-    routes = query.offset(skip).limit(limit).all()
-    return routes, total_count
+    if network and is_cidr:
+        # For CIDR notation, fetch all potential matches first
+        potential_matches = base_query.all()
+        
+        # Filter routes where the network contains or is contained by the query network
+        matches = []
+        for route in potential_matches:
+            if route.destination_network and route.mask_length:
+                try:
+                    # Create network from route destination and mask
+                    route_network = ipaddress.ip_network(
+                        f"{route.destination_network}/{route.mask_length}",
+                        strict=False
+                    )
+                    
+                    # Check for network overlap (either direction)
+                    if route_network.overlaps(network) or network.overlaps(route_network):
+                        matches.append(route)
+                except (ValueError, AttributeError):
+                    pass
+        
+        # Handle pagination manually
+        total_count = len(matches)
+        paginated_results = matches[skip:skip + limit] if skip < len(matches) else []
+        
+        return paginated_results, total_count
+    else:
+        # Fall back to the original string-based search
+        query = base_query.filter(Route.destination_network.ilike(f"%{ip_address_query}%"))
+        total_count = query.count()
+        routes = query.offset(skip).limit(limit).all()
+        return routes, total_count

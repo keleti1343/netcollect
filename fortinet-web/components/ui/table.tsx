@@ -86,7 +86,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "text-[var(--table-cell-font-size)] leading-[var(--table-cell-line-height)] p-4 align-middle",
+        "px-[var(--table-cell-padding-x)] py-[var(--table-cell-padding-y)] text-[var(--table-cell-font-size)] leading-[var(--table-cell-line-height)] text-[var(--table-cell-text-color)] bg-[var(--table-cell-background)] rounded-[var(--table-cell-border-radius)] align-middle",
         className
       )}
       {...props}

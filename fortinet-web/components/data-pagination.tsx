@@ -26,7 +26,7 @@ export function DataPagination({ totalPages, currentPage, onPageChange }: DataPa
   return (
     <div className="flex items-center justify-center space-x-6">
       <Button
-        variant="outline"
+        variant="sidebar-outline"
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage <= 1}
       >
@@ -38,7 +38,7 @@ export function DataPagination({ totalPages, currentPage, onPageChange }: DataPa
       </span>
       
       <Button
-        variant="outline"
+        variant="sidebar-outline"
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
       >

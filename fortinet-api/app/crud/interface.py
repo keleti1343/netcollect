@@ -99,20 +99,43 @@ def delete_interface(db: Session, interface_id: int) -> bool:
     db.commit()
     return True
 
-import ipaddress # Add ipaddress for CIDR/subnet matching
+import ipaddress
+from typing import Tuple, List, Optional
+from sqlalchemy.orm import Session, joinedload
+from app.models.interface import Interface
+from app.utils.ip_utils import parse_ip_query, ip_is_in_network
 
 def search_interfaces_by_ip(
     db: Session,
     ip_address_query: str,
     skip: int = 0,
-    limit: int = 15 # Default limit to 15 as per requirement
+    limit: int = 15
 ) -> Tuple[List[Interface], int]:
-    query = db.query(Interface).options(joinedload(Interface.vdom))
+    # Parse the query string
+    network, is_cidr = parse_ip_query(ip_address_query)
     
-    # Basic search for now, can be enhanced for CIDR/subnet matching
-    # For now, it will search for IP addresses that contain the query string
-    query = query.filter(Interface.ip_address.ilike(f"%{ip_address_query}%"))
+    # Base query with eager loading
+    base_query = db.query(Interface).options(joinedload(Interface.vdom))
     
-    total_count = query.count()
-    interfaces = query.offset(skip).limit(limit).all()
-    return interfaces, total_count
+    if network and is_cidr:
+        # For CIDR notation, we need to fetch all potential matches first
+        # because we can't do the network containment check directly in SQL
+        potential_matches = base_query.all()
+        
+        # Filter interfaces where the IP is in the specified network
+        matches = [
+            iface for iface in potential_matches
+            if iface.ip_address and ip_is_in_network(iface.ip_address, network)
+        ]
+        
+        # Handle pagination manually since we're filtering in Python
+        total_count = len(matches)
+        paginated_results = matches[skip:skip + limit] if skip < len(matches) else []
+        
+        return paginated_results, total_count
+    else:
+        # Fall back to the original string-based search
+        query = base_query.filter(Interface.ip_address.ilike(f"%{ip_address_query}%"))
+        total_count = query.count()
+        interfaces = query.offset(skip).limit(limit).all()
+        return interfaces, total_count
