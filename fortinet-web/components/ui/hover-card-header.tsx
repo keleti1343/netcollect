@@ -9,7 +9,7 @@ export function HoverCardHeader({ children, className }: HoverCardHeaderProps) {
   return (
     <div
       className={cn(
-        "bg-[var(--hover-card-header-bg)] padding-[var(--hover-card-header-padding)] border-b border-[var(--hover-card-header-border)]",
+        "bg-[var(--hover-card-header-bg)] p-[var(--hover-card-header-padding)] border-b border-[var(--hover-card-header-border)]",
         className
       )}
     >

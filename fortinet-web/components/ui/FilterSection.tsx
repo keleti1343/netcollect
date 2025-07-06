@@ -16,7 +16,7 @@ export function FilterSection({ title = "Filter Options", children }: FilterSect
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-6">
         {children}
       </CardContent>
     </Card>

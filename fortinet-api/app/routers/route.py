@@ -15,20 +15,22 @@ router = APIRouter(
 @router.get("/", response_model=dict)
 def read_routes(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,
     vdom_id: Optional[int] = None,
     route_type: Optional[str] = None,
     vdom_name: Optional[str] = Query(None, description="Filter routes by VDOM name"),
     include_vdom: bool = Query(False, description="Include VDOM details in the response"),
+    sort_by: Optional[str] = Query(None, description="Sort by field: route_type, exit_interface_name, vdom_name"),
+    sort_order: Optional[str] = Query("asc", description="Sort order: asc or desc"),
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve routes with optional filtering in paginated format.
+    Retrieve routes with optional filtering and sorting in paginated format.
     """
     db_routes = crud.get_routes(
         db, skip=skip, limit=limit,
         vdom_id=vdom_id, route_type=route_type, vdom_name=vdom_name,
-        include_vdom=include_vdom
+        include_vdom=include_vdom, sort_by=sort_by, sort_order=sort_order
     )
     total_count = crud.get_routes_count(
         db, vdom_id=vdom_id, route_type=route_type, vdom_name=vdom_name
@@ -50,7 +52,7 @@ def read_route(route_id: int, db: Session = Depends(get_db)):
 def read_routes_by_vdom(
     vdom_id: int,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,
     db: Session = Depends(get_db)
 ):
     """

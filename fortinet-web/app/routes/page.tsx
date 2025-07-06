@@ -8,18 +8,24 @@ import { Badge } from "@/components/ui/badge";
 import { PrimaryCell, TechnicalCell, DateTimeCell } from "@/components/ui/table-cells";
 import { TableCode } from "@/components/ui/table-code";
 import { EmptyState } from "@/components/empty-state";
+import { UniversalHoverCard } from "@/components/ui/universal-hover-card";
+import { FirewallDetails } from "../interfaces/components/firewall-details";
 import { FilterSection } from "@/components/ui/FilterSection";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
+import { PageFeatures, FeatureTypes } from "@/components/ui/page-features";
 
 export default async function RoutesPage({
   searchParams
 }: {
-  searchParams: { vdom_id?: string; page?: string; pageSize?: string } // Changed vdom_name to vdom_id
+  searchParams: { vdom_id?: string; page?: string; pageSize?: string; sort_by?: string; sort_order?: string } // Added sorting parameters
 }) {
   // Properly handle searchParams
   const searchParamsObj = await searchParams;
   const vdom_id = searchParamsObj.vdom_id; // Changed vdom_name to vdom_id
   const page = searchParamsObj.page ? Number(searchParamsObj.page) : 1;
   const pageSize = searchParamsObj.pageSize ? Number(searchParamsObj.pageSize) : 15;
+  const sort_by = searchParamsObj.sort_by;
+  const sort_order = searchParamsObj.sort_order || 'asc';
 
   // Build filter object
   const filters: Record<string, string> = {};
@@ -28,6 +34,10 @@ export default async function RoutesPage({
   // Add pagination params
   filters.skip = ((page - 1) * pageSize).toString();
   filters.limit = pageSize.toString();
+
+  // Add sorting params
+  if (sort_by) filters.sort_by = sort_by;
+  if (sort_order) filters.sort_order = sort_order;
 
   // Fetch data with filters
   const routesResponse = await getRoutes(filters);
@@ -40,37 +50,55 @@ export default async function RoutesPage({
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Enhanced Page Header */}
-      <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
-        <h1 className="text-3xl tracking-tight">
-          Routes
-          <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage routing tables across your Fortinet devices
-        </p>
-      </div>
-      
-      {/* Enhanced Filter Card */}
-      <FilterSection>
-        <RoutesFilter vdoms={vdoms} initialVdomId={vdom_id} />
-      </FilterSection>
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Compact Unified Header Card */}
+      <Card className="border shadow-sm" style={{
+        borderColor: 'rgba(26, 32, 53, 0.15)'
+      }}>
+        <CardHeader className="bg-muted/50 p-3 pb-2">
+          {/* Title and Description Section */}
+          <div className="pb-2">
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              Routes
+              <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
+            </CardTitle>
+            <CardDescription className="text-muted-foreground text-sm mt-1">
+              View routing table configurations across your Fortinet devices
+            </CardDescription>
+          </div>
+          
+          {/* Interactive Elements Section */}
+          <div className="pt-2 border-t border-border/50">
+            <div className="flex items-center justify-between gap-4">
+              {/* Page Features */}
+              <div className="flex-1">
+                <PageFeatures
+                  features={[
+                    FeatureTypes.sortableColumns(["Route Type", "Exit Interface", "VDom"]),
+                    FeatureTypes.filtering(["VDOM"])
+                  ]}
+                />
+              </div>
+              
+              {/* Filter Controls */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+                <RoutesFilter vdoms={vdoms} initialVdomId={vdom_id} />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
       
       {/* Enhanced Main Content Card */}
-      <Card
-        className="border shadow-sm"
-        style={{
-          borderColor: 'rgba(26, 32, 53, 0.15)'
-        }}
-      >
+      <Card className="border shadow-md card-shadow">
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            <CardTitle className="text-lg">
               Routing Table
+              <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground text-sm mt-1">
               Total: {totalCount} routes
             </CardDescription>
           </div>
@@ -84,13 +112,19 @@ export default async function RoutesPage({
           <div className="overflow-auto">
             <Table className="border-collapse">
               <TableHeader>
-                <TableRow>
-                  <TableHead>Route Type</TableHead>
-                  <TableHead>Destination</TableHead>
-                  <TableHead>Gateway</TableHead>
-                  <TableHead>Exit Interface</TableHead>
-                  <TableHead>VDom</TableHead>
-                  <TableHead>Last Updated</TableHead>
+                <TableRow className="bg-[#202A44] hover:bg-[#202A44] h-9">
+                  <SortableTableHead sortKey="route_type" className="text-sm text-white font-semibold">
+                    ROUTE TYPE
+                  </SortableTableHead>
+                  <TableHead className="text-sm text-white font-semibold">DESTINATION</TableHead>
+                  <TableHead className="text-sm text-white font-semibold">GATEWAY</TableHead>
+                  <SortableTableHead sortKey="exit_interface_name" className="text-sm text-white font-semibold">
+                    EXIT INTERFACE
+                  </SortableTableHead>
+                  <SortableTableHead sortKey="vdom_name" className="text-sm text-white font-semibold">
+                    VDOM
+                  </SortableTableHead>
+                  <TableHead className="text-sm text-white font-semibold">LAST UPDATED</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -106,8 +140,28 @@ export default async function RoutesPage({
                       <TechnicalCell value={route.route_type} />
                       <TechnicalCell value={`${route.destination_network}/${route.mask_length}`} />
                       <TechnicalCell value={route.gateway} />
-                      <TechnicalCell value={route.exit_interface_name} />
-                      <TechnicalCell value={route.vdom ? route.vdom.vdom_name : '−'} />
+                      <TechnicalCell value={route.exit_interface_name === "unknown" ? "−" : route.exit_interface_name} />
+                      <TableCell>
+                        {route.vdom ? (
+                          <UniversalHoverCard
+                            trigger={<TableCode>{route.vdom.vdom_name}</TableCode>}
+                            title={`${route.vdom.vdom_name} Details`}
+                            content={
+                              route.vdom.firewall ? (
+                                <FirewallDetails firewall={route.vdom.firewall} />
+                              ) : (
+                                <div className="text-center py-4 text-muted-foreground text-xs flex items-center justify-center">
+                                  <TableCode>Firewall information not available</TableCode>
+                                </div>
+                              )
+                            }
+                            positioning="smart"
+                            width="wide"
+                          />
+                        ) : (
+                          <TableCode>−</TableCode>
+                        )}
+                      </TableCell>
                       <DateTimeCell date={route.last_updated} />
                     </TableRow>
                   ))

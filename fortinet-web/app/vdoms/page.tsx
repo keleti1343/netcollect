@@ -1,167 +1,254 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TableCode } from "@/components/ui/table-code";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DataPagination } from "@/components/data-pagination";
 import { VdomsFilter } from "./components/vdoms-filter";
-import { getVdoms, getFirewalls, getInterfaces, getRoutes, getVips } from "@/services/api";
-import { InterfaceResponse, RouteResponse, VIPResponse, FirewallResponse } from "@/types";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { InterfacesList } from "./components/interfaces-list";
+import { VipsList } from "./components/vips-list";
+import { RoutesList } from "./components/routes-list";
+import { UniversalHoverCard } from "@/components/ui/universal-hover-card";
+import { getVdoms, getFirewalls } from "@/services/api";
+import { FirewallResponse, VDOMResponse } from "@/types";
 import { Badge } from "@/components/ui/badge"; // Import Badge
 import { Button } from "@/components/ui/button";
-import { HoverCardHeader } from "@/components/ui/hover-card-header"; // Import HoverCardHeader
 import { PrimaryCell, CountCell, DateTimeCell, TechnicalCell } from "@/components/ui/table-cells"; // Import TechnicalCell at top level
 import { EmptyState } from "@/components/empty-state";
 import { FilterSection } from "@/components/ui/FilterSection";
+import { SortableTableHead } from "@/components/ui/sortable-table-head"; // Import SortableTableHead
+import { PageFeatures, FeatureTypes } from "@/components/ui/page-features"; // Import PageFeatures
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default async function VdomsPage({
-  searchParams
-}: {
-  searchParams: { fw_name?: string; vdom_name?: string; page?: string; pageSize?: string }
-}) {
-  const searchParamsObj = await searchParams;
-  const fw_name = searchParamsObj.fw_name;
-  const vdom_name = searchParamsObj.vdom_name;
-  const page = searchParamsObj.page ? Number(searchParamsObj.page) : 1;
-  const pageSize = searchParamsObj.pageSize ? Number(searchParams.pageSize) : 15;
+export default function VdomsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const filters: Record<string, string> = {};
-  if (fw_name) filters.fw_name = fw_name;
-  if (vdom_name) filters.vdom_name = vdom_name;
+  const [vdoms, setVdoms] = useState<VDOMResponse[]>([]);
+  const [firewalls, setFirewalls] = useState<FirewallResponse[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  filters.skip = ((page - 1) * pageSize).toString();
-  filters.limit = pageSize.toString();
+  const fw_name = searchParams?.get("fw_name") || "";
+  const vdom_name = searchParams?.get("vdom_name") || "";
+  const currentPage = searchParams?.get("page") ? Number(searchParams?.get("page")) : 1;
+  const pageSize = searchParams?.get("pageSize") ? Number(searchParams?.get("pageSize")) : 15;
+  const sort_by = searchParams?.get("sort_by") || "";
+  const sort_order = searchParams?.get("sort_order") || "asc";
 
-  const vdomsResponse = await getVdoms(filters);
-  const vdoms = vdomsResponse.items;
-  const totalCount = vdomsResponse.total_count;
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const filters: Record<string, string> = {
+        skip: ((currentPage - 1) * pageSize).toString(),
+        limit: pageSize.toString(),
+      };
+      if (fw_name) filters.fw_name = fw_name;
+      if (vdom_name) filters.vdom_name = vdom_name;
+      if (sort_by) filters.sort_by = sort_by;
+      if (sort_order) filters.sort_order = sort_order;
 
-  const firewallsResponse = await getFirewalls();
-  const firewalls = firewallsResponse.items;
+      const vdomsResponse = await getVdoms(filters);
+      setVdoms(vdomsResponse.items);
+      setTotalCount(vdomsResponse.total_count);
+
+      const firewallsResponse = await getFirewalls();
+      setFirewalls(firewallsResponse.items);
+
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+      setError("Failed to load data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [currentPage, pageSize, fw_name, vdom_name, sort_by, sort_order]);
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  // Nested components for Interfaces, VIPs, and Routes lists
-  async function InterfacesList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
-    const { items: interfaces } = await getInterfaces({ vdom_id: vdomId.toString() });
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams || undefined);
+    params.set("page", page.toString());
+    router.push(`?${params.toString()}`);
+  };
 
+  // Loading state
+  if (loading) {
     return (
-      <div className="space-y-2">
-        <ScrollArea className={interfaces.length > 0 ? "h-[300px] w-full" : "w-full"} orientation="both"> {/* Conditional height */}
-          <ul className="list-none pl-4 space-y-1 overflow-x-auto w-max">
-            {interfaces.length > 0 ? (
-              interfaces.map((iface: InterfaceResponse) => (
-                <li key={iface.interface_id} className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
-                  <span className="mr-2 text-muted-foreground">−</span>
-                  <TableCode>{iface.interface_name}</TableCode> - <TableCode>{iface.ip_address}</TableCode>
-                </li>
-              ))
-            ) : (
-              <li className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
-                <span className="mr-2 text-muted-foreground">−</span>
-                <TableCode>No interfaces found</TableCode>
-              </li>
-            )}
-          </ul>
-      </ScrollArea>
+      <div className="space-y-4 max-w-7xl mx-auto">
+        {/* Header Card */}
+        <Card className="border shadow-sm" style={{
+          borderColor: 'rgba(26, 32, 53, 0.15)'
+        }}>
+          <CardHeader className="bg-muted/50 p-3 pb-2">
+            <div className="pb-2">
+              <CardTitle className="text-2xl font-bold tracking-tight">
+                VDoms
+                <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
+              </CardTitle>
+              <CardDescription className="text-muted-foreground text-sm mt-1">
+                View virtual domain configurations across your Fortinet devices
+              </CardDescription>
+            </div>
+            <div className="pt-2 border-t border-border/50">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <PageFeatures
+                    features={[
+                      FeatureTypes.hoverCard("Firewall", "Hover over firewall names to see detailed information"),
+                      FeatureTypes.sortableColumns(["VDom Name", "Firewall", "Interfaces", "VIPs", "Routes"]),
+                      FeatureTypes.filtering(["VDOM name", "Firewall"])
+                    ]}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+                  <Skeleton className="h-8 w-48" />
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+        
+        {/* Main Content Card */}
+        <Card className="border shadow-md card-shadow">
+          <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">
+                VDom List
+                <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
+              </CardTitle>
+              <CardDescription>
+                <Skeleton className="h-4 w-32" />
+              </CardDescription>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-auto">
+              <Table className="border-collapse">
+                <TableHeader>
+                  <TableRow className="bg-[#202A44] hover:bg-[#202A44] h-9">
+                    <TableHead className="text-sm text-white font-semibold">VDOM NAME</TableHead>
+                    <TableHead className="text-sm text-white font-semibold">FIREWALL</TableHead>
+                    <TableHead className="text-sm text-white font-semibold">INTERFACES</TableHead>
+                    <TableHead className="text-sm text-white font-semibold">VIPS</TableHead>
+                    <TableHead className="text-sm text-white font-semibold">ROUTES</TableHead>
+                    <TableHead className="text-sm text-white font-semibold">LAST UPDATED</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...Array(pageSize)].map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="border-t p-4">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-8 w-64" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  async function VipsList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
-    const { items: vips } = await getVips({ vdom_id: vdomId.toString() });
-
+  // Error state
+  if (error) {
     return (
-      <div className="space-y-2">
-        <ScrollArea className={vips.length > 0 ? "h-[300px] w-full" : "w-full"} orientation="both"> {/* Conditional height */}
-          <ul className="list-none pl-4 space-y-1 overflow-x-auto w-max">
-            {vips.length > 0 ? (
-              vips.map((vip: VIPResponse) => (
-                <li key={vip.vip_id} className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
-                  <span className="mr-2 text-muted-foreground">−</span>
-                  <TableCode>{vip.external_ip}</TableCode> → <TableCode>{vip.mapped_ip}</TableCode>
-                </li>
-              ))
-            ) : (
-              <li className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
-                <span className="mr-2 text-muted-foreground">−</span>
-                <TableCode>No VIPs found</TableCode>
-              </li>
-            )}
-          </ul>
-      </ScrollArea>
+      <div className="space-y-6">
+        <h1 className="text-3xl">VDoms</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
 
-  async function RoutesList({ vdomId, vdomName }: { vdomId: number, vdomName: string }) {
-    const { items: routes } = await getRoutes({ vdom_id: vdomId.toString() });
-
-    return (
-      <div className="space-y-2">
-        <ScrollArea className={routes.length > 0 ? "h-[300px] w-full" : "w-full"} orientation="both"> {/* Conditional height */}
-          <ul className="list-none pl-4 space-y-1 overflow-x-auto w-max">
-            {routes.length > 0 ? (
-              routes.map((route: RouteResponse) => (
-                <li key={route.route_id} className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
-                  <span className="mr-2 text-muted-foreground">−</span>
-                  <TableCode>{route.destination_network}/{route.mask_length}</TableCode> via <TableCode>{route.gateway || route.exit_interface_name}</TableCode>
-                </li>
-              ))
-            ) : (
-              <li className="p-2 rounded bg-neutral-50 hover:bg-muted flex items-center text-sm">
-                <span className="mr-2 text-muted-foreground">−</span>
-                <TableCode>No routes found</TableCode>
-              </li>
-            )}
-          </ul>
-      </ScrollArea>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Enhanced Page Header */}
-      <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
-        <h1 className="text-3xl tracking-tight">
-          VDoms
-          <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage virtual domains across your Fortinet devices
-        </p>
-      </div>
-      
-      {/* Enhanced Filter Card */}
-      <FilterSection>
-        <VdomsFilter
-          firewalls={firewalls}
-          initialFwName={fw_name}
-          initialVdomName={vdom_name}
-        />
-      </FilterSection>
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Compact Unified Header Card */}
+      <Card className="border shadow-sm" style={{
+        borderColor: 'rgba(26, 32, 53, 0.15)'
+      }}>
+        <CardHeader className="bg-muted/50 p-3 pb-2">
+          {/* Title and Description Section */}
+          <div className="pb-2">
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              VDoms
+              <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
+            </CardTitle>
+            <CardDescription className="text-muted-foreground text-sm mt-1">
+              View virtual domain configurations across your Fortinet devices
+            </CardDescription>
+          </div>
+          
+          {/* Interactive Elements Section */}
+          <div className="pt-2 border-t border-border/50">
+            <div className="flex items-center justify-between gap-4">
+              {/* Page Features */}
+              <div className="flex-1">
+                <PageFeatures
+                  features={[
+                    FeatureTypes.hoverCard("Firewall", "Hover over firewall names to see detailed information"),
+                    FeatureTypes.sortableColumns(["VDom Name", "Firewall", "Interfaces", "VIPs", "Routes"]),
+                    FeatureTypes.filtering(["VDOM name", "Firewall"])
+                  ]}
+                />
+              </div>
+              
+              {/* Filter Controls */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+                <VdomsFilter
+                  firewalls={firewalls}
+                  initialFwName={fw_name}
+                  initialVdomName={vdom_name}
+                />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
       
       {/* Enhanced Main Content Card */}
-      <Card
-        className="border shadow-sm"
-        style={{
-          borderColor: 'rgba(26, 32, 53, 0.15)'
-        }}
-      >
+      <Card className="border shadow-md card-shadow">
         <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <CardTitle className="text-lg">
               VDom List
+              <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground text-sm mt-1">
               Total: {totalCount} virtual domains
             </CardDescription>
           </div>
           <div className="text-sm text-muted-foreground">
             {vdoms.length > 0
-              ? `Showing ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of ${totalCount}`
+              ? `Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalCount)} of ${totalCount}`
               : 'No VDom found'}
           </div>
         </CardHeader>
@@ -169,13 +256,13 @@ export default async function VdomsPage({
           <div className="overflow-auto">
             <Table className="border-collapse">
               <TableHeader>
-                <TableRow>
-                  <TableHead>VDom Name</TableHead>
-                  <TableHead>Firewall</TableHead>
-                  <TableHead>Interfaces</TableHead>
-                  <TableHead>VIPs</TableHead>
-                  <TableHead>Routes</TableHead>
-                  <TableHead>Last Updated</TableHead>
+                <TableRow className="bg-[#202A44] hover:bg-[#202A44] h-9">
+                  <SortableTableHead sortKey="vdom_name" className="text-sm text-white font-semibold">VDOM NAME</SortableTableHead>
+                  <SortableTableHead sortKey="fw_name" className="text-sm text-white font-semibold">FIREWALL</SortableTableHead>
+                  <SortableTableHead sortKey="total_interfaces" className="text-sm text-white font-semibold">INTERFACES</SortableTableHead>
+                  <SortableTableHead sortKey="total_vips" className="text-sm text-white font-semibold">VIPS</SortableTableHead>
+                  <SortableTableHead sortKey="total_routes" className="text-sm text-white font-semibold">ROUTES</SortableTableHead>
+                  <TableHead className="text-sm text-white font-semibold">LAST UPDATED</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -200,57 +287,33 @@ export default async function VdomsPage({
                           </TableCode>
                         )}
                       </TableCell>
-                      <HoverCard>
-                        <HoverCardTrigger asChild>
-                          <TableCell className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
-                            <TableCode>
-                              {vdom.total_interfaces} interfaces
-                            </TableCode>
-                          </TableCell>
-                        </HoverCardTrigger>
-                        <HoverCardContent className="p-0">
-                          <HoverCardHeader>
-                            <h4 className="font-medium">{vdom.vdom_name}'s interfaces</h4>
-                          </HoverCardHeader>
-                          <div className="p-[var(--hover-card-content-padding)]">
-                            <InterfacesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
-                      <HoverCard>
-                        <HoverCardTrigger asChild>
-                          <TableCell className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
-                            <TableCode>
-                              {vdom.total_vips} VIPs
-                            </TableCode>
-                          </TableCell>
-                        </HoverCardTrigger>
-                        <HoverCardContent className="p-0">
-                          <HoverCardHeader>
-                            <h4 className="font-medium">{vdom.vdom_name}'s VIPs</h4>
-                          </HoverCardHeader>
-                          <div className="p-[var(--hover-card-content-padding)]">
-                            <VipsList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
-                      <HoverCard>
-                        <HoverCardTrigger asChild>
-                          <TableCell className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
-                            <TableCode>
-                              {vdom.total_routes} routes
-                            </TableCode>
-                          </TableCell>
-                        </HoverCardTrigger>
-                        <HoverCardContent className="p-0">
-                          <HoverCardHeader>
-                            <h4 className="font-medium">{vdom.vdom_name}'s routes</h4>
-                          </HoverCardHeader>
-                          <div className="p-[var(--hover-card-content-padding)]">
-                            <RoutesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name}/>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
+                      <TableCell>
+                        <UniversalHoverCard
+                          trigger={<TableCode>{vdom.total_interfaces || 0} interfaces</TableCode>}
+                          title={`${vdom.vdom_name}'s interfaces`}
+                          content={<InterfacesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name} />}
+                          positioning="smart"
+                          width="wide"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <UniversalHoverCard
+                          trigger={<TableCode>{vdom.total_vips || 0} vips</TableCode>}
+                          title={`${vdom.vdom_name}'s vips`}
+                          content={<VipsList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name} />}
+                          positioning="smart"
+                          width="wide"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <UniversalHoverCard
+                          trigger={<TableCode>{vdom.total_routes || 0} routes</TableCode>}
+                          title={`${vdom.vdom_name}'s routes`}
+                          content={<RoutesList vdomId={vdom.vdom_id} vdomName={vdom.vdom_name} />}
+                          positioning="smart"
+                          width="wide"
+                        />
+                      </TableCell>
                       <DateTimeCell date={vdom.last_updated} />
                     </TableRow>
                   ))
@@ -263,9 +326,9 @@ export default async function VdomsPage({
           <div className="border-t p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, totalCount)} of {totalCount} virtual domains
+                Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount} virtual domains
               </div>
-              <DataPagination currentPage={page} totalPages={totalPages} />
+              <DataPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
             </div>
           </div>
         </CardContent>

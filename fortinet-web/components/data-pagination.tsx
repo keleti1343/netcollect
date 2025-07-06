@@ -17,7 +17,7 @@ export function DataPagination({ totalPages, currentPage, onPageChange }: DataPa
     if (onPageChange) {
       onPageChange(pageNumber);
     } else {
-      const params = new URLSearchParams(searchParams);
+      const params = new URLSearchParams(searchParams || undefined);
       params.set('page', pageNumber.toString());
       router.push(`${pathname}?${params.toString()}`);
     }

@@ -31,15 +31,15 @@ export function IpListFilter({
   const searchParams = useSearchParams();
 
   const vdomId = useMemo(
-    () => searchParams.get("vdom_id") || initialVdomId || "",
+    () => searchParams?.get("vdom_id") || initialVdomId || "",
     [searchParams, initialVdomId]
   );
   const ip = useMemo(
-    () => searchParams.get("ip") || initialIp || "",
+    () => searchParams?.get("ip") || initialIp || "",
     [searchParams, initialIp]
   );
   const name = useMemo(
-    () => searchParams.get("name") || initialName || "",
+    () => searchParams?.get("name") || initialName || "",
     [searchParams, initialName]
   );
 
@@ -47,7 +47,7 @@ export function IpListFilter({
     key: "vdom_id" | "ip" | "name",
     value: string
   ) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     if (value) {
       params.set(key, value);
     } else {

@@ -14,11 +14,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { TechnicalCell } from "@/components/ui/table-cells"
 import { InterfaceResponse } from "@/types"
 import { PlaceholderValue } from "@/components/ui/placeholder-value";
-import { HoverCardHeader } from "@/components/ui/hover-card-header";
 
 export const columns: ColumnDef<InterfaceResponse>[] = [
   {
@@ -75,21 +73,19 @@ export const columns: ColumnDef<InterfaceResponse>[] = [
     header: "Description",
     cell: ({ row }) => (
       row.original.description ? (
-        <HoverCard>
-          <HoverCardTrigger asChild>
-            <Badge variant="info" className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
-              Description
-            </Badge>
-          </HoverCardTrigger>
-          <HoverCardContent className="p-0">
-            <HoverCardHeader>
+        <div className="relative group">
+          <Badge variant="info" className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+            Description
+          </Badge>
+          <div className="absolute z-[9999] hidden group-hover:block left-0 top-full mt-2 w-80 rounded-lg border border-border bg-popover shadow-lg">
+            <div className="bg-muted p-3 border-b border-border">
               <h4 className="font-medium">Interface Description</h4>
-            </HoverCardHeader>
-            <div className="p-[var(--hover-card-content-padding)]">
+            </div>
+            <div className="p-3">
               <p className="text-sm">{row.original.description}</p>
             </div>
-          </HoverCardContent>
-        </HoverCard>
+          </div>
+        </div>
       ) : (
         <PlaceholderValue value={row.original.description} />
       )

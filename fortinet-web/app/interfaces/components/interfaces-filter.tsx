@@ -35,7 +35,7 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
 
   const [filterValue, setFilterValue] = React.useState(initialName || initialIp || "");
   const [vdomOpen, setVdomOpen] = React.useState(false);
-  const [selectedVdomId, setSelectedVdomId] = React.useState(searchParams.get("vdom_id") || ""); // Get initial vdom_id from URL
+  const [selectedVdomId, setSelectedVdomId] = React.useState(searchParams?.get("vdom_id") || ""); // Get initial vdom_id from URL
 
   const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
     label: `${vdom.vdom_name} (${vdom.total_interfaces || 0} Interfaces)`,
@@ -43,7 +43,7 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
   }));
 
   function handleApplyFilter() {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     
     // Clear previous name/ip filters
     params.delete("name");
@@ -69,7 +69,7 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
   function handleClearFilter() {
     setFilterValue("");
     setSelectedVdomId(""); // Clear selected VDOM
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     params.delete("name");
     params.delete("ip");
     params.delete("vdom_id"); // Clear vdom_id filter
@@ -78,9 +78,9 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-4">
+    <div className="flex flex-wrap items-start gap-4 mb-2">
       {/* VDOM Filter Combobox */}
-      <div className="grid gap-2">
+      <div className="grid gap-2 min-w-[250px]">
         <Label htmlFor="vdom-filter">VDOM</Label>
         <Popover open={vdomOpen} onOpenChange={setVdomOpen}>
           <PopoverTrigger asChild>
@@ -88,59 +88,59 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
               variant="combobox"
               role="combobox"
               aria-expanded={vdomOpen}
-              className="w-[250px] justify-between shadow-sm"
+              className="w-full justify-between shadow-sm"
               id="vdom-filter"
             >
               {selectedVdomId
                 ? vdomOptions.find((vdom) => vdom.value === selectedVdomId)?.label
-                : "Select VDOM..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[250px] p-0">
-            <Command>
-              <CommandInput placeholder="Search VDOM..." />
-              <CommandList>
-                <CommandEmpty>No VDOM found.</CommandEmpty>
-                <CommandGroup>
-                  {vdomOptions.map((vdom) => (
-                    <CommandItem
-                      key={vdom.value}
-                      value={vdom.value}
-                      onSelect={(currentValue) => {
-                        setSelectedVdomId(currentValue === selectedVdomId ? "" : currentValue);
-                        setVdomOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedVdomId === vdom.value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {vdom.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
+              : "Select VDOM..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[250px] p-0">
+          <Command>
+            <CommandInput placeholder="Search VDOM..." />
+            <CommandList>
+              <CommandEmpty>No VDOM found.</CommandEmpty>
+              <CommandGroup>
+                {vdomOptions.map((vdom) => (
+                  <CommandItem
+                    key={vdom.value}
+                    value={vdom.value}
+                    onSelect={(currentValue) => {
+                      setSelectedVdomId(currentValue === selectedVdomId ? "" : currentValue);
+                      setVdomOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedVdomId === vdom.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {vdom.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
 
-      {/* Name/IP Filter Input */}
-      <div className="grid gap-2">
-        <Label htmlFor="interface-filter">Filter by Name or IP</Label>
-        <Input
-          id="interface-filter"
-          placeholder="Enter name or IP..."
-          value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-          className="w-[250px]"
-        />
-      </div>
-      
-      <div className="flex gap-2">
+    {/* Name/IP Filter Input */}
+    <div className="grid gap-2 min-w-[250px]">
+      <Label htmlFor="interface-filter">Filter by Name or IP</Label>
+      <Input
+        id="interface-filter"
+        placeholder="Enter name or IP..."
+        value={filterValue}
+        onChange={(e) => setFilterValue(e.target.value)}
+        className="w-full shadow-sm"
+      />
+    </div>
+    
+    <div className="flex gap-2 items-start mt-6">
         <Button
           onClick={handleApplyFilter}
           className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
@@ -150,7 +150,7 @@ export function InterfacesFilter({ initialName, initialIp, vdoms }: InterfacesFi
         <Button
           variant="outline"
           onClick={handleClearFilter}
-          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] transition-all"
+          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] hover:text-[var(--filter-button-secondary-hover-text)] transition-all"
         >
           Clear
         </Button>

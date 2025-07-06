@@ -4,15 +4,20 @@ import { DataPagination } from "@/components/data-pagination";
 import { getInterfaces, getVdoms } from "@/services/api";
 import { InterfaceResponse, VDOMResponse } from "@/types";
 import { InterfacesFilter } from "./components/interfaces-filter";
+import { FirewallDetails } from "./components/firewall-details";
 import { PrimaryCell, TechnicalCell, EmptyCell, DateTimeCell } from "@/components/ui/table-cells";
 import { TableCode } from "@/components/ui/table-code";
 import { FilterSection } from "@/components/ui/FilterSection";
 import { EmptyState } from "@/components/empty-state";
+import { UniversalHoverCard } from "@/components/ui/universal-hover-card";
+import { StatusGifCell } from "@/components/ui/status-gif-cell";
+import { SortableTableHead } from "@/components/ui/sortable-table-head";
+import { PageFeatures, FeatureTypes } from "@/components/ui/page-features";
 
 export default async function InterfacesPage({
   searchParams
 }: {
-  searchParams: { name?: string; ip?: string; vdom_id?: string; page?: string; pageSize?: string }
+  searchParams: { name?: string; ip?: string; vdom_id?: string; page?: string; pageSize?: string; sort_by?: string; sort_order?: string }
 }) {
   const searchParamsObj = await searchParams;
   const name = searchParamsObj.name;
@@ -20,11 +25,15 @@ export default async function InterfacesPage({
   const vdom_id = searchParamsObj.vdom_id; // Read vdom_id
   const page = searchParamsObj.page ? Number(searchParamsObj.page) : 1;
   const pageSize = searchParamsObj.pageSize ? Number(searchParamsObj.pageSize) : 15;
+  const sort_by = searchParamsObj.sort_by;
+  const sort_order = searchParamsObj.sort_order || 'asc';
 
   const filters: Record<string, string> = {};
   if (name) filters.interface_name = name;
   if (ip) filters.ip_address = ip;
   if (vdom_id) filters.vdom_id = vdom_id; // Add vdom_id to filters
+  if (sort_by) filters.sort_by = sort_by;
+  if (sort_order) filters.sort_order = sort_order;
 
   filters.skip = ((page - 1) * pageSize).toString();
   filters.limit = pageSize.toString();
@@ -39,37 +48,55 @@ export default async function InterfacesPage({
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-        <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
-          <div>
-            <h1 className="text-3xl tracking-tight">
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Compact Unified Header Card */}
+      <Card className="border shadow-sm" style={{
+        borderColor: 'rgba(26, 32, 53, 0.15)'
+      }}>
+        <CardHeader className="bg-muted/50 p-3 pb-2">
+          {/* Title and Description Section */}
+          <div className="pb-2">
+            <CardTitle className="text-2xl font-bold tracking-tight">
               Interfaces
-              <div className="h-1 w-20 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-2 rounded-full"></div>
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage and monitor network interfaces across your Fortinet devices
-            </p>
+              <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
+            </CardTitle>
+            <CardDescription className="text-muted-foreground text-sm mt-1">
+              View network interface configurations across your Fortinet devices
+            </CardDescription>
           </div>
-        </div>
-        {/* Enhanced Filter Card */}
-        <FilterSection>
-          <InterfacesFilter initialName={name} initialIp={ip} vdoms={vdoms} />
-        </FilterSection>
+          
+          {/* Interactive Elements Section */}
+          <div className="pt-2 border-t border-border/50">
+            <div className="flex items-center justify-between gap-4">
+              {/* Page Features */}
+              <div className="flex-1">
+                <PageFeatures
+                  features={[
+                    FeatureTypes.sortableColumns(["Name", "VDOM Name"]),
+                    FeatureTypes.filtering(["Interface name", "IP address", "VDOM"])
+                  ]}
+                />
+              </div>
+              
+              {/* Filter Controls */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+                <InterfacesFilter initialName={name} initialIp={ip} vdoms={vdoms} />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
         
         {/* Enhanced Main Content Card */}
-        <Card
-          className="border shadow-sm"
-          style={{
-            borderColor: 'rgba(26, 32, 53, 0.15)'
-          }}
-        >
+        <Card className="border shadow-md card-shadow">
           <CardHeader className="bg-muted/50 pb-3 flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+              <CardTitle className="text-lg">
                 Network Interfaces
+                <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-muted-foreground text-sm mt-1">
                 Total: {totalCount} interfaces
               </CardDescription>
             </div>
@@ -83,13 +110,13 @@ export default async function InterfacesPage({
             <div className="overflow-auto">
               <Table className="border-collapse">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>IP Address</TableHead>
-                    <TableHead>VDOM Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Updated</TableHead>
+                  <TableRow className="bg-[#202A44] hover:bg-[#202A44] h-9">
+                    <SortableTableHead sortKey="interface_name" className="text-sm text-white font-semibold">NAME</SortableTableHead>
+                    <TableHead className="text-sm text-white font-semibold">IP ADDRESS</TableHead>
+                    <SortableTableHead sortKey="vdom_name" className="text-sm text-white font-semibold">VDOM NAME</SortableTableHead>
+                    <TableHead className="text-sm text-white font-semibold">DESCRIPTION</TableHead>
+                    <SortableTableHead sortKey="status" className="text-sm text-white font-semibold">STATUS</SortableTableHead>
+                    <TableHead className="text-sm text-white font-semibold">LAST UPDATED</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -104,9 +131,29 @@ export default async function InterfacesPage({
                       <TableRow key={iface.interface_id}>
                         <TechnicalCell value={iface.interface_name} />
                         <TechnicalCell value={iface.ip_address} />
-                        <TechnicalCell value={iface.vdom?.vdom_name || '−'} />
+                        <TableCell>
+                          {iface.vdom ? (
+                            <UniversalHoverCard
+                              trigger={<TableCode>{iface.vdom.vdom_name}</TableCode>}
+                              title={`${iface.vdom.vdom_name} Details`}
+                              content={
+                                iface.vdom.firewall ? (
+                                  <FirewallDetails firewall={iface.vdom.firewall} />
+                                ) : (
+                                  <div className="text-center py-4 text-muted-foreground text-xs flex items-center justify-center">
+                                    <TableCode>Firewall information not available</TableCode>
+                                  </div>
+                                )
+                              }
+                              positioning="smart"
+                              width="wide"
+                            />
+                          ) : (
+                            <TableCode>−</TableCode>
+                          )}
+                        </TableCell>
                         <TechnicalCell value={iface.description || '−'} />
-                        <TechnicalCell value={iface.status === 'unknown' || !iface.status ? '−' : iface.status} />
+                        <StatusGifCell status={iface.status} />
                         <DateTimeCell date={iface.last_updated} />
                       </TableRow>
                     ))

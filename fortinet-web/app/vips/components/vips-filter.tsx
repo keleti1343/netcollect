@@ -35,12 +35,12 @@ export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
   const [selectedVdomId, setSelectedVdomId] = React.useState(initialVdomId || "");
 
   const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
-    label: `${vdom.vdom_name} (${vdom.total_vips || 0} VIPs)`, // Display name and number of VIPs
+    label: `${vdom.vdom_name} (${vdom.total_vips || 0} VIPs)${vdom.firewall ? ` - ${vdom.firewall.fw_name}` : ''}`, // Display name, VIPs count, and firewall name
     value: vdom.vdom_id.toString(),
   }));
 
   function handleApplyFilter() {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     
     params.delete("vdom_id"); // Clear vdom_id filter
 
@@ -54,26 +54,26 @@ export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
   
   function handleClearFilter() {
     setSelectedVdomId("");
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     params.delete("vdom_id");
     params.set("page", "1");
     router.push(`${pathname}?${params.toString()}`);
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-4">
+    <div className="flex flex-wrap items-start gap-4 mb-2">
       {/* VDOM Filter Combobox */}
-      <div className="grid gap-2">
-        <Label htmlFor="vdom-filter">VDOM</Label>
-        <Popover open={vdomOpen} onOpenChange={setVdomOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="combobox"
-              role="combobox"
-              aria-expanded={vdomOpen}
-              className="w-[250px] justify-between shadow-sm"
-              id="vdom-filter"
-            >
+      <div className="grid gap-2 min-w-[250px]">
+          <Label htmlFor="vdom-filter">VDOM</Label>
+          <Popover open={vdomOpen} onOpenChange={setVdomOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="combobox"
+                role="combobox"
+                aria-expanded={vdomOpen}
+                className="w-full justify-between shadow-sm"
+                id="vdom-filter"
+              >
               {selectedVdomId
                 ? vdomOptions.find((vdom) => vdom.value === selectedVdomId)?.label
                 : "Select VDOM..."}
@@ -89,9 +89,12 @@ export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
                   {vdomOptions.map((vdom) => (
                     <CommandItem
                       key={vdom.value}
-                      value={vdom.value}
-                      onSelect={(currentValue) => {
-                        setSelectedVdomId(currentValue === selectedVdomId ? "" : currentValue);
+                      value={vdom.label}
+                      onSelect={(currentLabel) => {
+                        const selectedVdom = vdomOptions.find(v => v.label.toLowerCase() === currentLabel.toLowerCase());
+                        if (selectedVdom) {
+                          setSelectedVdomId(selectedVdom.value);
+                        }
                         setVdomOpen(false);
                       }}
                     >
@@ -111,7 +114,7 @@ export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
         </Popover>
       </div>
       
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-start mt-6">
         <Button
           onClick={handleApplyFilter}
           className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
@@ -119,8 +122,9 @@ export function VipsFilter({ vdoms, initialVdomId }: VipsFilterProps) {
           Apply Filter
         </Button>
         <Button
-          variant="sidebar-outline"
+          variant="outline"
           onClick={handleClearFilter}
+          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] hover:text-[var(--filter-button-secondary-hover-text)] transition-all"
         >
           Clear
         </Button>

@@ -6,13 +6,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_NAME = os.getenv("DB_NAME", "postgres")
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "55322")
+# Use DATABASE_URL if provided, otherwise construct from individual variables
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+if not SQLALCHEMY_DATABASE_URL:
+    DB_NAME = os.getenv("DB_NAME", "postgres")
+    DB_USER = os.getenv("DB_USER", "postgres")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+    DB_HOST = os.getenv("DB_HOST", "supabase-db")
+    DB_PORT = os.getenv("DB_PORT", "5432")
+    SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -5,10 +5,8 @@ import { getInterfaces, getVdoms } from "@/services/api";
 import { InterfaceResponse } from "@/types";
 import { IpListFilter } from "./components/ip-list-filter";
 import { Badge } from "@/components/ui/badge";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
 import { TechnicalCell } from "@/components/ui/table-cells";
-import { HoverCardHeader } from "@/components/ui/hover-card-header";
 import { EmptyState } from "@/components/empty-state";
 import { PlaceholderValue } from "@/components/ui/placeholder-value";
 
@@ -44,7 +42,7 @@ export default async function IpListPage({
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       {/* Enhanced Page Header */}
-      <div className="bg-muted/50 rounded-lg p-6 shadow-sm">
+      <div className="bg-muted/50 rounded-lg p-3 shadow-sm">
         <div>
           <h1 className="text-3xl tracking-tight">IP List</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -89,14 +87,14 @@ export default async function IpListPage({
         <CardContent className="p-0">
           <div className="overflow-auto">
             <Table className="border-collapse">
-              <TableHeader className="bg-muted/50">
-                <TableRow className="hover:bg-muted/20">
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Name</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">IP Address</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">VDOM Name</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Description</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Status</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider text-muted-foreground py-3">Last Updated</TableHead>
+              <TableHeader>
+                <TableRow className="bg-[#202A44] hover:bg-[#202A44]">
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-white py-3">NAME</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-white py-3">IP ADDRESS</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-white py-3">VDOM NAME</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-white py-3">DESCRIPTION</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-white py-3">STATUS</TableHead>
+                  <TableHead className="font-medium text-xs uppercase tracking-wider text-white py-3">LAST UPDATED</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -118,21 +116,19 @@ export default async function IpListPage({
                       </TableCell>
                       <TableCell>
                         {iface.description ? (
-                          <HoverCard>
-                            <HoverCardTrigger asChild>
-                              <Badge variant="info" className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
-                                Description
-                              </Badge>
-                            </HoverCardTrigger>
-                            <HoverCardContent className="p-0">
-                              <HoverCardHeader>
+                          <div className="relative group">
+                            <Badge variant="info" className="cursor-help hover:bg-[var(--hover-trigger-bg-hover)] transition-[var(--hover-trigger-transition)]">
+                              Description
+                            </Badge>
+                            <div className="absolute z-[9999] hidden group-hover:block left-0 top-full mt-2 w-80 rounded-lg border border-border bg-popover shadow-lg">
+                              <div className="bg-muted p-3 border-b border-border">
                                 <h4 className="font-medium">Interface Description</h4>
-                              </HoverCardHeader>
-                              <div className="p-[var(--hover-card-content-padding)]">
+                              </div>
+                              <div className="p-3">
                                 <p className="text-sm">{iface.description}</p>
                               </div>
-                            </HoverCardContent>
-                          </HoverCard>
+                            </div>
+                          </div>
                         ) : (
                           <PlaceholderValue value={iface.description} />
                         )}

@@ -1,0 +1,177 @@
+services:
+  # Load Balancer
+  nginx:
+    build: ./nginx
+    container_name: fortinet-nginx
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    depends_on:
+      - fortinet-api-1
+      - fortinet-api-2
+      - fortinet-web-1
+      - fortinet-web-2
+    networks:
+      - frontend-network
+      - backend-network
+    volumes:
+      - nginx-logs:/var/log/nginx
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # FastAPI Backend Services (Load Balanced)
+  fortinet-api-1:
+    build: ./fortinet-api
+    container_name: fortinet-api-1
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - API_PORT=8000
+      - ENVIRONMENT=production
+    depends_on:
+      - supabase-db
+      - redis
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  fortinet-api-2:
+    build: ./fortinet-api
+    container_name: fortinet-api-2
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379/0
+      - API_PORT=8000
+      - ENVIRONMENT=production
+    depends_on:
+      - supabase-db
+      - redis
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Next.js Frontend Services (Load Balanced)
+  fortinet-web-1:
+    build: ./fortinet-web
+    container_name: fortinet-web-1
+    environment:
+      - NEXT_PUBLIC_API_URL=http://fortinet-nginx/api
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      - fortinet-api-1
+      - fortinet-api-2
+    networks:
+      - frontend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  fortinet-web-2:
+    build: ./fortinet-web
+    container_name: fortinet-web-2
+    environment:
+      - NEXT_PUBLIC_API_URL=http://fortinet-nginx/api
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      - fortinet-api-1
+      - fortinet-api-2
+    networks:
+      - frontend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Database Service
+  supabase-db:
+    image: supabase/postgres:15.1.0.147
+    container_name: supabase-db
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres-db/data:/docker-entrypoint-initdb.d
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Redis Cache Service
+  redis:
+    build: ./redis
+    container_name: fortinet-redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Load Testing Service
+  testloader:
+    build: ./testloader
+    container_name: fortinet-testloader
+    environment:
+      - TARGET_URL=http://nginx
+    depends_on:
+      - nginx
+    networks:
+      - frontend-network
+    profiles:
+      - testing
+    command: ["sleep", "infinity"]  # Keep container running for manual testing
+
+networks:
+  frontend-network:
+    driver: bridge
+    name: fortinet-frontend
+  backend-network:
+    driver: bridge
+    name: fortinet-backend
+
+volumes:
+  postgres-data:
+    name: fortinet-postgres-data
+  redis-data:
+    name: fortinet-redis-data
+  nginx-logs:
+    name: fortinet-nginx-logs

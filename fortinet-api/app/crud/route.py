@@ -14,11 +14,13 @@ def get_routes(
     vdom_id: Optional[int] = None,
     route_type: Optional[str] = None,
     vdom_name: Optional[str] = None, # Add vdom_name parameter
-    include_vdom: bool = False
+    include_vdom: bool = False,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "asc"
 ) -> List[Route]:
     query = db.query(Route)
 
-    if include_vdom or vdom_name: # Ensure join if filtering by vdom_name or including vdom details
+    if include_vdom or vdom_name or sort_by == "vdom_name": # Ensure join if filtering by vdom_name, including vdom details, or sorting by vdom_name
         query = query.join(VDOM, Route.vdom_id == VDOM.vdom_id) # Explicit join for filtering
         if include_vdom: # If also including vdom, ensure it's loaded efficiently
              query = query.options(joinedload(Route.vdom))
@@ -30,6 +32,25 @@ def get_routes(
         query = query.filter(Route.route_type == route_type)
     if vdom_name:
         query = query.filter(VDOM.vdom_name.ilike(f"%{vdom_name}%")) # Filter by vdom_name
+
+    # Apply sorting
+    if sort_by:
+        if sort_by == "route_type":
+            sort_column = Route.route_type
+        elif sort_by == "exit_interface_name":
+            sort_column = Route.exit_interface_name
+        elif sort_by == "vdom_name":
+            sort_column = VDOM.vdom_name
+        else:
+            sort_column = Route.route_type  # Default fallback
+        
+        if sort_order.lower() == "desc":
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+    else:
+        # Default sorting by route type
+        query = query.order_by(Route.route_type.asc())
         
     return query.offset(skip).limit(limit).all()
 
@@ -37,7 +58,9 @@ def get_routes_count(
     db: Session,
     vdom_id: Optional[int] = None,
     route_type: Optional[str] = None,
-    vdom_name: Optional[str] = None # Add vdom_name parameter
+    vdom_name: Optional[str] = None, # Add vdom_name parameter
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "asc"
 ) -> int:
     query = db.query(Route)
 

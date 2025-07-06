@@ -15,11 +15,124 @@ This document provides guidelines for making API calls and generating code using
 
 ## Common Issues and Solutions
 
-### Issue with `searchParams`
+### Issue with `useSearchParams` Null Checking in Next.js Client Components
 
 #### Problem
 
-In Next.js, when using dynamic routes and search parameters, the `searchParams` object should be awaited before using its properties. This is a common issue that can lead to TypeScript errors and potential runtime issues.
+**TypeScript Error**: `'searchParams' is possibly 'null'. (18047)`
+
+In Next.js App Router, when using `useSearchParams()` hook in client components, the returned value can be `null` during certain phases of the component lifecycle:
+
+1. **Server-Side Rendering (SSR)**: During initial server render, search params may not be available
+2. **Hydration Phase**: Before the client-side router is fully initialized
+3. **Navigation Transitions**: During route changes or when the component mounts before search params are parsed
+
+This is different from server components where `searchParams` is passed as a prop and is guaranteed to be an object (though it can be empty).
+
+#### Technical Details
+
+```typescript
+// useSearchParams() return type in Next.js
+const searchParams: ReadonlyURLSearchParams | null = useSearchParams();
+```
+
+The hook can return `null` because:
+- **Client-side routing**: The browser's URL needs to be parsed after hydration
+- **Concurrent rendering**: React 18's concurrent features can cause timing issues
+- **Suspense boundaries**: Components may render before search params are resolved
+
+#### Solution
+
+Always use optional chaining (`?.`) or explicit null checks when accessing `useSearchParams()` methods:
+
+#### Code Example
+
+##### Before Fix (Causes TypeScript Error)
+
+```typescript
+'use client';
+
+import { useSearchParams } from "next/navigation";
+
+export default function FirewallsPage() {
+  const searchParams = useSearchParams();
+
+  // ❌ TypeScript Error: 'searchParams' is possibly 'null'
+  const fw_name = searchParams.get("fw_name") || "";
+  const currentPage = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
+  const pageSize = searchParams.get("pageSize") ? Number(searchParams.get("pageSize")) : 15;
+  
+  const handlePageChange = (page: number) => {
+    // ❌ TypeScript Error: 'searchParams' is possibly 'null'
+    const params = new URLSearchParams(searchParams);
+    params.set("page", page.toString());
+    router.push(`?${params.toString()}`);
+  };
+}
+```
+
+##### After Fix (Proper Null Checking)
+
+```typescript
+'use client';
+
+import { useSearchParams } from "next/navigation";
+
+export default function FirewallsPage() {
+  const searchParams = useSearchParams();
+
+  // ✅ Safe access with optional chaining
+  const fw_name = searchParams?.get("fw_name") || "";
+  const currentPage = searchParams?.get("page") ? Number(searchParams.get("page")) : 1;
+  const pageSize = searchParams?.get("pageSize") ? Number(searchParams.get("pageSize")) : 15;
+  const sort_by = searchParams?.get("sort_by") || "";
+  const sort_order = searchParams?.get("sort_order") || "asc";
+  
+  const handlePageChange = (page: number) => {
+    // ✅ Safe URLSearchParams construction
+    const params = new URLSearchParams(searchParams || undefined);
+    params.set("page", page.toString());
+    router.push(`?${params.toString()}`);
+  };
+}
+```
+
+#### Alternative Solutions
+
+**Option 1: Explicit Null Check**
+```typescript
+const fw_name = searchParams ? searchParams.get("fw_name") || "" : "";
+```
+
+**Option 2: Early Return Pattern**
+```typescript
+if (!searchParams) {
+  return <div>Loading...</div>; // or some loading state
+}
+const fw_name = searchParams.get("fw_name") || "";
+```
+
+**Option 3: Custom Hook with Fallback**
+```typescript
+function useSearchParamsWithFallback() {
+  const searchParams = useSearchParams();
+  return searchParams || new URLSearchParams();
+}
+```
+
+#### Recommendations
+
+1. **Always Use Optional Chaining**: Use `searchParams?.get()` instead of `searchParams.get()`
+2. **Provide Fallback Values**: Always have sensible defaults for when params are missing
+3. **Handle URLSearchParams Constructor**: Use `new URLSearchParams(searchParams || undefined)`
+4. **Consider Loading States**: For critical functionality, consider showing loading states when searchParams is null
+5. **TypeScript Strict Mode**: Enable strict null checks to catch these issues early
+
+### Issue with `searchParams` in Server Components (Legacy Documentation)
+
+#### Problem
+
+In Next.js server components, when using dynamic routes and search parameters, the `searchParams` object should be properly typed and handled.
 
 #### Solution
 
@@ -2358,6 +2471,108 @@ export function DataPagination({ totalPages, currentPage }: DataPaginationProps)
 
 ## Best Practices
 
+### Next.js Client Component Search Parameters
+
+#### Best Practice: Always Handle Null `useSearchParams()`
+
+When working with `useSearchParams()` in Next.js client components, always assume it can be null and handle accordingly:
+
+```typescript
+// ✅ Good Practice
+const searchParams = useSearchParams();
+const param = searchParams?.get("param") || "default";
+
+// ❌ Bad Practice
+const searchParams = useSearchParams();
+const param = searchParams.get("param") || "default"; // TypeScript error
+```
+
+#### Best Practice: Centralize Search Param Logic
+
+Create reusable utilities for common search parameter patterns:
+
+```typescript
+// utils/searchParams.ts
+import { useSearchParams } from "next/navigation";
+
+export function useSearchParam(key: string, defaultValue: string = ""): string {
+  const searchParams = useSearchParams();
+  return searchParams?.get(key) || defaultValue;
+}
+
+export function useNumericSearchParam(key: string, defaultValue: number = 0): number {
+  const searchParams = useSearchParams();
+  const value = searchParams?.get(key);
+  return value ? Number(value) : defaultValue;
+}
+
+export function useSafeURLSearchParams(): URLSearchParams {
+  const searchParams = useSearchParams();
+  return new URLSearchParams(searchParams || undefined);
+}
+```
+
+#### Best Practice: TypeScript Configuration
+
+Ensure your TypeScript configuration catches null-related issues:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true
+  }
+}
+```
+
+#### Best Practice: ESLint Rules
+
+Add ESLint rules to catch potential null access issues:
+
+```json
+// .eslintrc.json
+{
+  "rules": {
+    "@typescript-eslint/no-non-null-assertion": "error",
+    "@typescript-eslint/prefer-optional-chain": "error"
+  }
+}
+```
+
+### General Development Guidelines
+
+#### Code Review Checklist
+
+When reviewing code, always check for:
+
+1. **Null Safety**: Are all potentially null values properly handled?
+2. **Type Safety**: Do TypeScript types accurately reflect runtime behavior?
+3. **Error Boundaries**: Are error states properly handled?
+4. **Loading States**: Are loading states shown when data is not yet available?
+5. **Fallback Values**: Are sensible defaults provided for missing data?
+
+#### Testing Strategy
+
+Always test edge cases:
+
+```typescript
+// Example test cases for search params
+describe('SearchParams Edge Cases', () => {
+  test('handles null searchParams', () => {
+    // Mock useSearchParams to return null
+    jest.mocked(useSearchParams).mockReturnValue(null);
+    // Test component behavior
+  });
+  
+  test('handles empty searchParams', () => {
+    jest.mocked(useSearchParams).mockReturnValue(new URLSearchParams());
+    // Test component behavior
+  });
+});
+```
+
 #### 3. Status Field Investigation
 
 ##### Problem
@@ -2979,6 +3194,354 @@ async function VdomsList({ firewallId, firewallName }: { firewallId: number, fir
 }
 ```
 
+## Critical Production Deployment Issues and Solutions
+
+This section documents critical issues encountered during containerized deployment and their solutions. These issues are particularly important for production deployments and can cause complete application failure if not addressed properly.
+
+### Issue: Docker Health Check Configuration Problems
+
+#### Problem
+
+Docker health checks were failing for API services, causing nginx to mark them as unhealthy and return 503 Service Temporarily Unavailable errors, even when the API services were actually running and processing requests correctly.
+
+**Root Cause**: The health check configuration was using Python's `requests` library which was not available in the container, or attempting to use `curl` which was also not installed.
+
+**Symptoms**:
+- Docker shows API services as "unhealthy" in `docker ps`
+- Nginx returns 503 errors for API requests
+- API services appear to be running but are unreachable through the load balancer
+- Direct API calls to individual containers work fine
+
+#### Solution
+
+Use Python's built-in `urllib.request` library for health checks instead of external dependencies:
+
+##### Code Example
+
+**File**: `docker-compose.yml`
+
+###### Before Fix (Causes Health Check Failures)
+
+```yaml
+fortinet-api-1:
+  # ... other configuration
+  healthcheck:
+    test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+```
+
+**Alternative Failed Approach**:
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # curl not available
+```
+
+###### After Fix (Working Solution)
+
+```yaml
+fortinet-api-1:
+  # ... other configuration
+  healthcheck:
+    test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+```
+
+#### Recommendations
+
+1. **Use Built-in Libraries**: Always prefer Python's built-in libraries (`urllib.request`) over external dependencies (`requests`) for health checks
+2. **Test Health Checks**: Verify health check commands work in the container environment before deployment
+3. **Monitor Container Health**: Regularly check `docker ps` output to ensure all services show as "healthy"
+4. **Avoid External Dependencies**: Don't assume tools like `curl` or `wget` are available in minimal container images
+
+### Issue: Next.js Server-Side Rendering URL Problems
+
+#### Problem
+
+Next.js applications making API calls during server-side rendering (SSR) were failing with "ERR_INVALID_URL" errors because relative URLs don't work in server-side contexts.
+
+**Root Cause**: During SSR, Next.js runs on the server where relative URLs like `/api/firewalls` are invalid. The server needs absolute URLs to make HTTP requests.
+
+**Symptoms**:
+- Pages fail to load with "ERR_INVALID_URL" errors
+- API calls work fine in client-side rendering but fail during SSR
+- Error occurs specifically when pages are refreshed or accessed directly
+
+#### Solution
+
+Implement environment-aware API URL handling that detects server vs client context:
+
+##### Code Example
+
+**File**: `fortinet-web/services/api.ts`
+
+###### Before Fix (Causes SSR Failures)
+
+```typescript
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+export async function getRoutes(params?: Record<string, string>) {
+  const queryParams = params ? new URLSearchParams(params).toString() : '';
+  const url = queryParams ? `${API_BASE_URL}/routes/?${queryParams}` : `${API_BASE_URL}/routes/`;
+  const response = await fetch(url); // Fails in SSR with relative URL
+  // ...
+}
+```
+
+###### After Fix (Works in Both SSR and Client)
+
+```typescript
+// Environment-aware API base URL detection
+function getApiBaseUrl(): string {
+  // Server-side rendering: use absolute URL
+  if (typeof window === 'undefined') {
+    return 'http://fortinet-nginx/api';
+  }
+  // Client-side rendering: use relative URL or environment variable
+  return process.env.NEXT_PUBLIC_API_URL || '/api';
+}
+
+export async function getRoutes(params?: Record<string, string>) {
+  const queryParams = params ? new URLSearchParams(params).toString() : '';
+  const API_BASE_URL = getApiBaseUrl();
+  const url = queryParams ? `${API_BASE_URL}/routes/?${queryParams}` : `${API_BASE_URL}/routes/`;
+  const response = await fetch(url); // Works in both contexts
+  // ...
+}
+```
+
+#### Recommendations
+
+1. **Environment Detection**: Always detect server vs client context using `typeof window === 'undefined'`
+2. **Absolute URLs for SSR**: Use absolute URLs (with container names) for server-side API calls
+3. **Relative URLs for Client**: Use relative URLs or environment variables for client-side calls
+4. **Centralized URL Logic**: Implement URL resolution logic in a single function used by all API calls
+5. **Test Both Contexts**: Test pages both by navigation (client-side) and direct access/refresh (SSR)
+
+### Issue: Nginx Rate Limiting Causing 503 Errors
+
+#### Problem
+
+Nginx rate limiting was too restrictive for hover card functionality, causing 503 Service Temporarily Unavailable errors when multiple rapid API requests were made.
+
+**Root Cause**: Hover cards make multiple simultaneous API requests (interfaces, VIPs, routes) which exceeded the nginx rate limit of 10 requests per second.
+
+**Symptoms**:
+- Hover cards show "Failed to load" messages
+- 503 errors in browser network tab for API requests
+- Main page loads fine but interactive elements fail
+- Direct API calls work when made individually
+
+#### Solution
+
+Increase nginx rate limits to accommodate legitimate application usage patterns:
+
+##### Code Example
+
+**File**: `nginx/nginx.conf`
+
+###### Before Fix (Too Restrictive)
+
+```nginx
+# Rate limiting
+limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=web:10m rate=30r/s;
+```
+
+**File**: `nginx/conf.d/default.conf`
+
+```nginx
+location /api/ {
+    limit_req zone=api burst=20 nodelay;
+    # ... other configuration
+}
+```
+
+###### After Fix (Accommodates Application Needs)
+
+**File**: `nginx/nginx.conf`
+
+```nginx
+# Rate limiting - Increased API rate limit to handle hover card requests
+limit_req_zone $binary_remote_addr zone=api:10m rate=50r/s;
+limit_req_zone $binary_remote_addr zone=web:10m rate=30r/s;
+```
+
+**File**: `nginx/conf.d/default.conf`
+
+```nginx
+location /api/ {
+    limit_req zone=api burst=100 nodelay;
+    # ... other configuration
+}
+```
+
+#### Recommendations
+
+1. **Analyze Usage Patterns**: Understand your application's legitimate request patterns before setting rate limits
+2. **Test Interactive Features**: Specifically test features that make multiple concurrent requests (hover cards, auto-complete, etc.)
+3. **Monitor 503 Errors**: Set up monitoring for 503 errors which often indicate rate limiting issues
+4. **Balance Security and Usability**: Rate limits should prevent abuse while allowing normal application functionality
+5. **Production Considerations**: Ensure rate limits are appropriate for expected production traffic
+
+### Issue: Database Import and Data Quality Problems
+
+#### Problem
+
+Importing production data from Supabase to dockerized PostgreSQL failed due to various data quality issues including SQL syntax errors, invalid data types, and encoding problems.
+
+**Root Cause**: Exported SQL data contained inconsistencies, invalid values, and formatting issues that prevented successful import.
+
+**Symptoms**:
+- Database import scripts fail with SQL syntax errors
+- Invalid INET values cause import failures
+- Apostrophes and special characters break SQL statements
+- Foreign key constraint violations during import
+
+#### Solution
+
+Implement systematic data cleaning and validation during import:
+
+##### Data Quality Issues and Fixes
+
+1. **SQL Syntax Errors**: Fixed malformed INSERT statements
+2. **Invalid INET Values**: Cleaned up network address formats
+3. **String Escaping**: Properly escaped apostrophes and special characters
+4. **Data Type Mismatches**: Ensured data types match schema definitions
+5. **Foreign Key Dependencies**: Imported data in correct order to respect relationships
+
+##### Import Process
+
+```bash
+# Ordered import to respect foreign key dependencies
+1. firewalls_rows.sql (25 records)
+2. vdoms_rows.sql (205 records)
+3. interfaces_rows.sql (572 records)
+4. routes_rows.sql (500 records)
+5. vips_rows.sql (141 records)
+```
+
+#### Recommendations
+
+1. **Data Validation**: Always validate exported data before import
+2. **Dependency Mapping**: Understand foreign key relationships and import in correct order
+3. **Error Handling**: Implement robust error handling in import scripts
+4. **Backup Strategy**: Always backup existing data before import
+5. **Testing**: Test import process with sample data first
+
+### Production Deployment Checklist
+
+#### Pre-Deployment Verification
+
+1. **Environment Configuration**
+   - [ ] All environment files (.env, .env.dev) have consistent database settings
+   - [ ] API secret keys are properly generated and secure
+   - [ ] CORS origins are configured for production domains
+   - [ ] SSL certificates are configured if using HTTPS
+
+2. **Docker Configuration**
+   - [ ] Health checks use built-in libraries (urllib.request)
+   - [ ] All services have proper health check configurations
+   - [ ] Container dependencies are correctly defined
+   - [ ] Volume mounts are configured for data persistence
+
+3. **Nginx Configuration**
+   - [ ] Rate limits are appropriate for application usage patterns
+   - [ ] Load balancing is properly configured
+   - [ ] SSL termination is configured if needed
+   - [ ] Security headers are in place
+
+4. **Application Configuration**
+   - [ ] API URL handling works for both SSR and client-side rendering
+   - [ ] Database connections use correct container names
+   - [ ] All API endpoints use consistent URL formatting (trailing slashes)
+
+#### Deployment Process
+
+1. **Build and Test**
+   ```bash
+   # Build all images
+   ./deploy.sh production build
+   
+   # Deploy production environment
+   ./deploy.sh production deploy
+   
+   # Verify health checks
+   docker ps --format "table {{.Names}}\t{{.Status}}"
+   ```
+
+2. **Health Verification**
+   ```bash
+   # Check nginx health
+   curl -f http://localhost/health
+   
+   # Check API health
+   curl -f http://localhost/api/health
+   
+   # Verify database connectivity
+   docker exec -it supabase-db pg_isready -U postgres
+   ```
+
+3. **Functional Testing**
+   - [ ] Main pages load correctly
+   - [ ] API endpoints respond properly
+   - [ ] Interactive features (hover cards, filters) work
+   - [ ] Database queries return expected results
+
+#### Post-Deployment Monitoring
+
+1. **Container Health**
+   ```bash
+   # Monitor container status
+   ./deploy.sh production status
+   
+   # View real-time stats
+   ./deploy.sh production stats
+   ```
+
+2. **Log Monitoring**
+   ```bash
+   # View application logs
+   ./deploy.sh production logs
+   ```
+
+3. **Performance Monitoring**
+   - Monitor response times
+   - Check for 503/504 errors
+   - Verify database performance
+   - Monitor resource usage
+
+#### Environment Consistency
+
+Both production and development environments now use the same database configuration:
+
+```bash
+# Database settings (consistent across environments)
+POSTGRES_DB=fortinet_network_collector_dev
+POSTGRES_PASSWORD=dev_password_123
+```
+
+This ensures:
+- No database-related issues when promoting from development to production
+- Consistent data structure and relationships
+- Simplified troubleshooting and debugging
+- Easier data migration between environments
+
 ## Conclusion
 
-By following these guidelines and best practices, you can ensure that your code is robust, maintainable, and free from common issues related to API calls and code generation. Always document your code and solutions to help other developers understand and maintain the codebase.
+By following these guidelines and best practices, you can ensure that your code is robust, maintainable, and free from common issues related to API calls and code generation. The production deployment section above documents critical issues that can cause complete application failure and must be addressed before any production deployment.
+
+**Key Takeaways for Production Readiness**:
+1. Always test Docker health checks in the actual container environment
+2. Implement proper SSR URL handling for Next.js applications
+3. Configure nginx rate limits based on actual application usage patterns
+4. Validate and clean data before database imports
+5. Maintain environment consistency between development and production
+6. Follow the deployment checklist to avoid common pitfalls
+
+Always document your code and solutions to help other developers understand and maintain the codebase.

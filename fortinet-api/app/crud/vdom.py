@@ -15,7 +15,9 @@ def get_vdoms(
     skip: int = 0,
     limit: int = 100,
     firewall_id: Optional[int] = None,
-    vdom_name: Optional[str] = None  # Added vdom_name
+    vdom_name: Optional[str] = None,  # Added vdom_name
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "asc"
 ) -> (List[VDOM], int): # Changed return type
     # Start with the base query for VDOMs and eager load firewall
     query = db.query(VDOM).options(joinedload(VDOM.firewall))
@@ -63,6 +65,32 @@ def get_vdoms(
         query_with_count = query_with_count.filter(VDOM.firewall_id == firewall_id)
     if vdom_name:
         query_with_count = query_with_count.filter(VDOM.vdom_name.ilike(f"%{vdom_name}%"))
+
+    # Apply sorting
+    if sort_by:
+        if sort_by == "vdom_name":
+            sort_column = VDOM.vdom_name
+        elif sort_by == "fw_name":
+            # Need to join with firewall table for sorting by firewall name
+            from app.models.firewall import Firewall
+            query_with_count = query_with_count.join(Firewall, VDOM.firewall_id == Firewall.firewall_id)
+            sort_column = Firewall.fw_name
+        elif sort_by == "total_interfaces":
+            sort_column = interface_count_subquery
+        elif sort_by == "total_vips":
+            sort_column = vip_count_subquery
+        elif sort_by == "total_routes":
+            sort_column = route_count_subquery
+        else:
+            sort_column = VDOM.vdom_name  # Default fallback
+        
+        if sort_order.lower() == "desc":
+            query_with_count = query_with_count.order_by(sort_column.desc())
+        else:
+            query_with_count = query_with_count.order_by(sort_column.asc())
+    else:
+        # Default sorting by vdom name
+        query_with_count = query_with_count.order_by(VDOM.vdom_name.asc())
 
     # Get paginated items
     items_with_count = query_with_count.offset(skip).limit(limit).all()

@@ -179,7 +179,7 @@
   --table-header-bg-start: #f8fafc;
   --table-header-bg-end: #f1f5f9;
   --table-row-border: #e2e8f0;
-  --table-row-hover-bg: rgba(241, 245, 249, 0.7);
+  --table-row-hover-bg: rgba(32, 42, 68, 0.1); /* Light version of sidebar color for hover */
   
   /* Typography standardization */
   --table-header-font-size: 0.75rem;
@@ -218,8 +218,27 @@
   --hover-trigger-transition: background-color 0.2s ease;
   --hover-card-content-padding: 0.75rem;
 
-  /* Hover card */
-  --hover-card-width: 20rem; /* 320px */
+  /* Enhanced Hover Card System */
+  /* Positioning */
+  --hover-card-offset-x: -50px;
+  --hover-card-offset-y: 0px;
+  --hover-card-fallback-offset: 50px;
+  --hover-card-viewport-margin: 10px;
+  
+  /* Dimensions */
+  --hover-card-width: 20rem; /* 320px - w-80 */
+  --hover-card-width-sm: 24rem; /* 384px - sm:w-96 */
+  --hover-card-width-narrow: 16rem; /* 256px - w-64 */
+  --hover-card-max-height: calc(80vh - 100px);
+  
+  /* Z-Index */
+  --hover-card-z-index: 99999;
+  --hover-card-bridge-z-index: 99998;
+  
+  /* Bridge Area */
+  --hover-card-bridge-height: 8px; /* h-2 */
+  
+  /* Styling */
   --hover-card-border-radius: var(--radius);
   --hover-card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   
@@ -229,7 +248,6 @@
   
   --hover-card-content-padding: 1rem;
   --hover-card-content-bg: var(--card);
-  --hover-card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
   
   --hover-trigger-transition: all 0.2s ease;
   --hover-trigger-bg-hover: var(--primary-foreground);
@@ -253,32 +271,28 @@
   --combobox-empty-padding: 3rem 1rem;
   --combobox-empty-text-align: center;
 
-  /* Combobox - Light Version of Sidebar Color */
-  --combobox-bg: #5b5b8a; /* Lighter version of sidebar color #2d2d45 */
-  --combobox-text: white;
-  --combobox-hover-bg: #6b6ba0; /* Even lighter for hover state */
-
   /* Combobox - Match Sidebar Color */
-  --combobox-bg: var(--sidebar-bg-start, #1a2035); /* Match sidebar start color */
+  --combobox-bg: #202A44; /* Match sidebar start color exactly */
   --combobox-text: white;
-  --combobox-hover-bg: var(--sidebar-bg-end, #232a40); /* Use sidebar end color for hover */
+  --combobox-hover-bg: #232a40; /* Match sidebar end color for hover */
 
   /* Combobox */
-  --combobox-item-hover-bg: var(--combobox-bg, #1a2035);
-  --combobox-item-hover-text: var(--combobox-text, white);
- 
-  /* Filter Buttons */
-  --filter-button-primary-bg: var(--sidebar-button-bg, #2d2d45); /* Match sidebar button color */
+  --combobox-item-hover-bg: #202A44;
+  --combobox-item-hover-text: white;
+
+  /* Filter Buttons - Match Sidebar Colors */
+  --filter-button-primary-bg: #202A44; /* Match sidebar start color exactly */
   --filter-button-primary-text: white;
   --filter-button-primary-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  --filter-button-primary-hover-bg: var(--sidebar-button-hover-bg, #3c3c5c); /* Match sidebar button hover */
+  --filter-button-primary-hover-bg: #232a40; /* Match sidebar end color for hover */
   --filter-button-primary-hover-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
- 
+
   --filter-button-secondary-bg: transparent;
   --filter-button-secondary-text: var(--muted-foreground);
   --filter-button-secondary-border: var(--border);
-  --filter-button-secondary-hover-bg: var(--muted);
-  --filter-button-secondary-hover-border: var(--ring);
+  --filter-button-secondary-hover-bg: #232a40; /* Match Apply Filter button hover color */
+  --filter-button-secondary-hover-border: #232a40; /* Match the hover background */
+  --filter-button-secondary-hover-text: white; /* White text on dark background */
 }
 
 .dark {
@@ -358,19 +372,23 @@
   --badge-placeholder-border: oklch(0.4 0.01 0 / 30%);
 
   /* Table typography - dark theme */
-  --table-row-hover-bg: oklch(1 0 0 / 5%);
+  --table-row-hover-bg: rgba(32, 42, 68, 0.15); /* Slightly more visible version of sidebar color for dark mode */
   --table-header-bg-start: oklch(0.25 0.02 265 / 50%);
   --table-header-bg-end: oklch(0.20 0.02 265 / 50%);
   --table-row-border: oklch(1 0 0 / 10%);
 
   /* Filter Buttons - Dark Mode */
   --sidebar-button-bg: #2d2d45; /* Lighter shade of sidebar color */
-  --sidebar-button-hover-bg: #3c3c5c; /* Even lighter shade for hover */
-  --filter-button-primary-hover-bg: var(--sidebar-button-hover-bg);
-  --filter-button-secondary-hover-bg: oklch(1 0 0 / 5%);
+  --sidebar-button-hover-bg: #232a40; /* Match sidebar end color for hover */
+  --filter-button-primary-bg: #202A44; /* Match sidebar start color exactly */
+  --filter-button-primary-hover-bg: #232a40; /* Match sidebar end color for hover */
+  --filter-button-secondary-hover-bg: #232a40; /* Match Apply Filter button hover color */
+  --filter-button-secondary-hover-border: #232a40; /* Match the hover background */
 
-  /* Combobox */
-  --combobox-item-hover-bg: color-mix(in srgb, var(--sidebar-bg-start) 15%, transparent);
+  /* Combobox - Dark Mode */
+  --combobox-bg: #202A44; /* Match sidebar start color exactly */
+  --combobox-hover-bg: #232a40; /* Match sidebar end color for hover */
+  --combobox-item-hover-bg: #202A44;
 }
 
 /* Additional utility classes */
@@ -391,7 +409,7 @@
 
 /* Enhanced hover card styling */
 .hover-card-list {
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -404,6 +422,169 @@
 
 .hover-card-list-item:hover {
   background-color: var(--muted);
+}
+
+/* Improved hover card positioning and behavior */
+.hover-card-container {
+  position: absolute;
+  z-index: 9999;
+  display: none;
+  top: 100%;
+  margin-top: 0.25rem;
+  width: 20rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background-color: var(--popover);
+  box-shadow: var(--hover-card-shadow);
+  overflow: hidden;
+}
+
+.hover-card-container.show {
+  display: block;
+}
+
+/* Create a bridge area to prevent hover card from disappearing */
+.hover-card-container::before {
+  content: '';
+  position: absolute;
+  top: -0.25rem;
+  left: 0;
+  right: 0;
+  height: 0.25rem;
+  background: transparent;
+  z-index: -1;
+}
+
+/* Responsive positioning for hover cards */
+@media (min-width: 640px) {
+  .hover-card-container {
+    width: 24rem;
+  }
+  
+  .hover-card-container.right-aligned {
+    left: auto;
+    right: 0;
+  }
+}
+
+/* Touch device support for hover cards */
+@media (max-width: 640px) {
+  .group:active .group-hover\:block {
+    display: block !important;
+  }
+  
+  .hover-card-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 20rem;
+    max-height: 80vh;
+  }
+}
+
+/* Prevent hover cards from extending beyond viewport */
+.hover-card-content {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+/* Smooth transitions for hover effects */
+.hover-trigger {
+  transition: var(--hover-trigger-transition);
+}
+
+.hover-trigger:hover {
+  background-color: var(--hover-trigger-bg-hover);
+  transform: var(--hover-trigger-transform-hover);
+}
+
+/* Enhanced ScrollArea mouse wheel support */
+[data-slot="scroll-area-viewport"] {
+  overflow: auto !important;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  height: 100%;
+  max-height: 100%;
+  padding-right: 5px; /* Prevents content from touching scrollbar */
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background-color: transparent;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+
+/* ScrollArea improvements for hover cards */
+.hover-card-content {
+  padding-right: 4px;
+}
+
+[data-slot="scroll-area-viewport"] {
+  overflow-y: auto !important;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  padding-right: 4px;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+
+/* Fix for Safari */
+@supports (-webkit-overflow-scrolling: touch) {
+  [data-slot="scroll-area-viewport"] {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+
+/* Ensure proper wheel event handling */
+[data-slot="scroll-area"] {
+  overflow: hidden;
+}
+
+[data-slot="scroll-area-viewport"] {
+  scroll-behavior: smooth;
 }
 
 @layer base {

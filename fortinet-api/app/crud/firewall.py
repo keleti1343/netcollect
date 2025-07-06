@@ -18,7 +18,9 @@ def get_firewalls(
     db: Session,
     skip: int = 0,
     limit: int = 100,
-    fw_name: Optional[str] = None
+    fw_name: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "asc"
 ) -> (List[Firewall], int):
     # Start with the base query for Firewalls
     query = db.query(Firewall)
@@ -45,6 +47,23 @@ def get_firewalls(
     # Apply filters to this new query
     if fw_name:
         query_with_count = query_with_count.filter(Firewall.fw_name.ilike(f"%{fw_name}%"))
+
+    # Apply sorting
+    if sort_by:
+        if sort_by == "fw_name":
+            sort_column = Firewall.fw_name
+        elif sort_by == "total_vdoms":
+            sort_column = vdom_count_subquery
+        else:
+            sort_column = Firewall.fw_name  # Default fallback
+        
+        if sort_order.lower() == "desc":
+            query_with_count = query_with_count.order_by(sort_column.desc())
+        else:
+            query_with_count = query_with_count.order_by(sort_column.asc())
+    else:
+        # Default sorting by firewall name
+        query_with_count = query_with_count.order_by(Firewall.fw_name.asc())
 
     # Get paginated items
     items_with_count = query_with_count.offset(skip).limit(limit).all()

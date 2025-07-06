@@ -1,13 +1,14 @@
 from sqlalchemy.orm import Session, joinedload # Import joinedload
 from typing import List, Optional, Tuple # Import Tuple
 from app.models.interface import Interface
+from app.models.vdom import VDOM # Import VDOM model
 from app.schemas.interface import InterfaceCreate, InterfaceUpdate
 
 def get_interface(db: Session, interface_id: int) -> Optional[Interface]:
     return db.query(Interface).filter(Interface.interface_id == interface_id).first()
 
 def get_interfaces(
-    db: Session, 
+    db: Session,
     skip: int = 0,
     limit: int = 100,
     firewall_id: Optional[int] = None,
@@ -15,12 +16,17 @@ def get_interfaces(
     interface_type: Optional[str] = None,
     interface_name: Optional[str] = None, # Add interface_name
     ip_address: Optional[str] = None, # Add ip_address
-    include_vdom: bool = False # Add include_vdom
+    include_vdom: bool = False, # Add include_vdom
+    sort_by: Optional[str] = None, # Updated parameter name
+    sort_order: Optional[str] = "asc" # Updated parameter name
 ) -> Tuple[List[Interface], int]: # Return list and total count
     query = db.query(Interface)
 
-    if include_vdom: # Eager load VDOM if requested
-        query = query.options(joinedload(Interface.vdom))
+    # Join with VDOM if needed for sorting by vdom_name or if include_vdom is True
+    if include_vdom or sort_by == "vdom_name":
+        query = query.outerjoin(VDOM, Interface.vdom_id == VDOM.vdom_id)
+        if include_vdom:
+            query = query.options(joinedload(Interface.vdom))
     
     if firewall_id:
         query = query.filter(Interface.firewall_id == firewall_id)
@@ -32,6 +38,24 @@ def get_interfaces(
         query = query.filter(Interface.interface_name.ilike(f"%{interface_name}%"))
     if ip_address: # Filter by ip_address
         query = query.filter(Interface.ip_address.ilike(f"%{ip_address}%"))
+    
+    # Add sorting
+    if sort_by:
+        if sort_by == "interface_name":
+            sort_column = Interface.interface_name
+        elif sort_by == "vdom_name":
+            sort_column = VDOM.vdom_name
+        else:
+            # Fallback to interface_name if sort_by is not recognized
+            sort_column = Interface.interface_name
+        
+        if sort_order.lower() == "desc":
+            query = query.order_by(sort_column.desc())
+        else:
+            query = query.order_by(sort_column.asc())
+    else:
+        # Default sorting by interface name
+        query = query.order_by(Interface.interface_name.asc())
         
     total_count = query.count() # Get total count before applying limit/offset
     interfaces = query.offset(skip).limit(limit).all()

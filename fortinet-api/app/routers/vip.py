@@ -17,17 +17,20 @@ from app.schemas.vip import VIPCreate, VIPUpdate, VIPResponse, VIPPaginationResp
 @router.get("/", response_model=VIPPaginationResponse)
 def read_vips(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,
     vdom_id: Optional[int] = None,
     vip_type: Optional[str] = None,
+    sort_by: Optional[str] = Query(None, description="Sort by field (e.g., vdom_name)"),
+    sort_order: Optional[str] = Query("asc", description="Sort order (asc or desc)"),
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve VIPs with optional filtering and pagination.
+    Retrieve VIPs with optional filtering, sorting, and pagination.
     """
     vips, total_count = crud.get_vips(
         db, skip=skip, limit=limit,
-        vdom_id=vdom_id, vip_type=vip_type
+        vdom_id=vdom_id, vip_type=vip_type,
+        sort_by=sort_by, sort_order=sort_order
     )
     return {"items": vips, "total_count": total_count}
 

@@ -1,6 +1,16 @@
 import { FirewallResponse, VDOMResponse, InterfaceResponse, RouteResponse, VIPResponse } from '../types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8800/api';
+// Handle both client-side and server-side rendering
+const getApiBaseUrl = () => {
+  // Server-side rendering (inside Docker container)
+  if (typeof window === 'undefined') {
+    return 'http://fortinet-nginx/api';
+  }
+  // Client-side rendering (browser)
+  return process.env.NEXT_PUBLIC_API_URL || '/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export async function getFirewalls(params?: Record<string, string>): Promise<{ items: FirewallResponse[], total_count: number }> {
   const queryParams = params ? new URLSearchParams(params).toString() : '';

@@ -16,16 +16,18 @@ router = APIRouter(
 @router.get("/", response_model=InterfacePaginationResponse)
 def read_interfaces(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,
     firewall_id: Optional[int] = None,
     vdom_id: Optional[int] = None,
     interface_type: Optional[str] = None,
     interface_name: Optional[str] = Query(None, description="Filter by interface name"),
     ip_address: Optional[str] = Query(None, description="Filter by IP address"),
+    sort_by: Optional[str] = Query(None, description="Sort by field (e.g., interface_name, vdom_name)"),
+    sort_order: Optional[str] = Query("asc", description="Sort order (asc or desc)"),
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve interfaces with optional filtering and pagination.
+    Retrieve interfaces with optional filtering, sorting, and pagination.
     """
     interfaces, total_count = crud.get_interfaces(
         db, skip=skip, limit=limit,
@@ -33,7 +35,9 @@ def read_interfaces(
         interface_type=interface_type,
         interface_name=interface_name,
         ip_address=ip_address,
-        include_vdom=True # Pass include_vdom=True
+        include_vdom=True, # Pass include_vdom=True
+        sort_by=sort_by,
+        sort_order=sort_order
     )
     return {"items": interfaces, "total_count": total_count}
 

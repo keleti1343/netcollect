@@ -1,0 +1,86 @@
+# Development overrides for docker-compose
+# This file is automatically loaded by docker-compose for development
+
+services:
+  # Development overrides for FastAPI services
+  fortinet-api-1:
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - RELOAD=true
+    volumes:
+      - ./fortinet-api:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports:
+      - "8001:8000"  # Expose for direct access during development
+
+  fortinet-api-2:
+    environment:
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - RELOAD=true
+    volumes:
+      - ./fortinet-api:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ports:
+      - "8002:8000"  # Expose for direct access during development
+
+  # Development overrides for Next.js services
+  fortinet-web-1:
+    build:
+      context: ./fortinet-web
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=/api
+    volumes:
+      - ./fortinet-web:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3001:3000"  # Expose for direct access during development
+
+  fortinet-web-2:
+    build:
+      context: ./fortinet-web
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=/api
+    volumes:
+      - ./fortinet-web:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3002:3000"  # Expose for direct access during development
+
+  # Development database with exposed port
+  supabase-db:
+    ports:
+      - "56322:5432"  # Expose database for direct access
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+  # Development Redis with exposed port
+  redis:
+    ports:
+      - "6379:6379"  # Expose Redis for direct access
+
+  # Development nginx with debug logging
+  nginx:
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    environment:
+      - NGINX_DEBUG=true
+
+  # Always include testloader in development
+  testloader:
+    profiles: []  # Remove testing profile to always include in development
+    volumes:
+      - ./testloader:/app
+    environment:
+      - NODE_ENV=development
+      - TARGET_URL=http://nginx

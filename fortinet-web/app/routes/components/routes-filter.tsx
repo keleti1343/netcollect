@@ -35,12 +35,12 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
   const [selectedVdomId, setSelectedVdomId] = React.useState(initialVdomId || ""); // Changed state variable
 
   const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
-    label: `${vdom.vdom_name} (${vdom.total_routes || 0} Routes)`, // Display name and number of routes
+    label: `${vdom.vdom_name} (${vdom.total_routes || 0} Routes)${vdom.firewall ? ` - ${vdom.firewall.fw_name}` : ''}`, // Display name, routes count, and firewall name
     value: vdom.vdom_id.toString(), // Use vdom_id as the value
   }));
 
   function handleApplyFilter() {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     
     if (selectedVdomId) {
       params.set("vdom_id", selectedVdomId); // Set vdom_id parameter
@@ -56,7 +56,7 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
   
   function handleClearFilter() {
     setSelectedVdomId("");
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     params.delete("vdom_id");
     params.delete("vdom_name");
     params.set("page", "1");
@@ -64,18 +64,18 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="vdom-filter">VDOM</Label>
-        <Popover open={vdomOpen} onOpenChange={setVdomOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="combobox"
-              role="combobox"
-              aria-expanded={vdomOpen}
-              className="w-[250px] justify-between shadow-sm"
-              id="vdom-filter"
-            >
+    <div className="flex flex-wrap items-start gap-4 mb-2">
+      <div className="grid gap-2 min-w-[250px]">
+          <Label htmlFor="vdom-filter">VDOM</Label>
+          <Popover open={vdomOpen} onOpenChange={setVdomOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="combobox"
+                role="combobox"
+                aria-expanded={vdomOpen}
+                className="w-full justify-between shadow-sm"
+                id="vdom-filter"
+              >
               {selectedVdomId
                 ? vdomOptions.find((option) => option.value === selectedVdomId)?.label
                 : "Select VDOM..."}
@@ -91,9 +91,12 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
                   {vdomOptions.map((option) => (
                     <CommandItem
                       key={option.value}
-                      value={option.value} // This will be vdom_id as string
-                      onSelect={(currentValue) => { // currentValue is vdom_id as string
-                        setSelectedVdomId(currentValue === selectedVdomId ? "" : currentValue);
+                      value={option.label} // Use label for filtering
+                      onSelect={(currentLabel) => { // currentLabel is the selected label
+                        const selectedVdom = vdomOptions.find(v => v.label.toLowerCase() === currentLabel.toLowerCase());
+                        if (selectedVdom) {
+                          setSelectedVdomId(selectedVdom.value); // Set selectedVdomId to the actual ID
+                        }
                         setVdomOpen(false);
                       }}
                     >
@@ -113,7 +116,7 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
         </Popover>
       </div>
       
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-start mt-6">
         <Button
           onClick={handleApplyFilter}
           className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
@@ -123,7 +126,7 @@ export function RoutesFilter({ vdoms, initialVdomId }: RoutesFilterProps) { // C
         <Button
           variant="outline"
           onClick={handleClearFilter}
-          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] transition-all"
+          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] hover:text-[var(--filter-button-secondary-hover-text)] transition-all"
         >
           Clear
         </Button>

@@ -77,9 +77,6 @@ export function AppSidebar() {
           })}
         </nav>
       </ScrollArea>
-      <div className="p-4 border-t border-gray-800 text-center text-xs text-gray-500">
-        Version 1.0.0
-      </div>
     </div>
   );
 }

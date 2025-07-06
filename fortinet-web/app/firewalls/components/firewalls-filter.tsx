@@ -18,11 +18,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { getFirewalls, getVdoms } from "@/services/api"
 import { Label } from "@/components/ui/label"
@@ -75,7 +70,7 @@ const options = await Promise.all(firewalls.map(async (fw) => {
   }, []);
 
   function handleApplyFilter() {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     
     if (firewallName) {
       params.set("fw_name", firewallName);
@@ -91,53 +86,51 @@ const options = await Promise.all(firewalls.map(async (fw) => {
   
   function handleClearFilter() {
     setFirewallName("");
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     params.delete("fw_name");
     params.set("page", "1");
     router.push(`${pathname}?${params.toString()}`);
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="fw-name">Firewall Name</Label>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="combobox"
-              role="combobox"
-              aria-expanded={open}
-              className="w-[250px] justify-between shadow-sm"
-            >
-              {firewallName
-                ? firewallOptions.find((option) => option.value === firewallName)?.label
-                : "Select firewall..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[250px] p-0">
-            <Command>
-              <CommandInput placeholder="Search firewall..." />
-              <CommandList>
-                <CommandEmpty>No firewall found.</CommandEmpty>
-                <CommandGroup>
+    <div className="flex flex-wrap items-start gap-4 mb-2">
+      <div className="grid gap-2 min-w-[250px]">
+          <Label htmlFor="fw-name">Firewall Name</Label>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="combobox"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between shadow-sm"
+              >
+                {firewallName
+                  ? firewallOptions.find((option) => option.value === firewallName)?.label
+                  : "Select firewall..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[250px] p-0">
+              <Command>
+                <CommandInput placeholder="Search firewall..." />
+                <CommandList>
+                  <CommandEmpty>No firewall found.</CommandEmpty>
+                  <CommandGroup>
 {firewallOptions.map((option) => (
   <CommandItem key={option.value} value={option.value}>
-    <HoverCard>
-      <HoverCardTrigger asChild>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center">
-            <Check
-              className={cn(
-                "mr-2 h-4 w-4",
-                firewallName === option.value ? "opacity-100" : "opacity-0"
-              )}
-            />
-            {option.label}
-          </div>
+    <div className="relative group w-full">
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center">
+          <Check
+            className={cn(
+              "mr-2 h-4 w-4",
+              firewallName === option.value ? "opacity-100" : "opacity-0"
+            )}
+          />
+          {option.label}
         </div>
-      </HoverCardTrigger>
-      <HoverCardContent className="w-80">
+      </div>
+      <div className="absolute z-[9999] hidden group-hover:block left-0 top-full mt-2 w-80 rounded-lg border border-border bg-popover shadow-lg p-4">
         <div className="flex flex-col gap-2">
           <div className="flex flex-col">
             <p className="text-sm font-semibold">VDOMs</p>
@@ -152,8 +145,8 @@ const options = await Promise.all(firewalls.map(async (fw) => {
             )}
           </div>
         </div>
-      </HoverCardContent>
-    </HoverCard>
+      </div>
+    </div>
     <div
       className="absolute inset-0"
       onClick={() => {
@@ -163,14 +156,14 @@ const options = await Promise.all(firewalls.map(async (fw) => {
     />
   </CommandItem>
 ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
       </div>
       
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-start mt-6">
         <Button
           onClick={handleApplyFilter}
           className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
@@ -180,7 +173,7 @@ const options = await Promise.all(firewalls.map(async (fw) => {
         <Button
           variant="outline"
           onClick={handleClearFilter}
-          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] transition-all"
+          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] hover:text-[var(--filter-button-secondary-hover-text)] transition-all"
         >
           Clear
         </Button>

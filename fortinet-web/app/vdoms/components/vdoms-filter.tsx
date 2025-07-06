@@ -46,7 +46,7 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
   }));
 
   function handleApplyFilter() {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     
     if (selectedFwName) {
       params.set("fw_name", selectedFwName);
@@ -67,7 +67,7 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
   function handleClearFilter() {
     setSelectedFwName("");
     setVdomName("");
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams || undefined);
     params.delete("fw_name");
     params.delete("vdom_name");
     params.set("page", "1");
@@ -76,27 +76,27 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
 
 
   return (
-    <div className="flex flex-wrap items-end gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="fw-name-filter">Firewall Name</Label>
-        <Popover open={fwNameOpen} onOpenChange={setFwNameOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="combobox"
-              role="combobox"
-              aria-expanded={fwNameOpen}
-              className={cn(
-                "w-[250px] justify-between shadow-sm",
-                selectedFwName && "bg-[var(--combobox-item-hover-bg)] text-accent-foreground"
-              )}
-              id="fw-name-filter"
-            >
-              {selectedFwName
-                ? firewallOptions.find((option) => option.value === selectedFwName)?.label
-                : "Select firewall..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
+    <div className="flex flex-wrap items-start gap-4 mb-2">
+      <div className="grid gap-2 min-w-[250px]">
+          <Label htmlFor="fw-name-filter">Firewall Name</Label>
+          <Popover open={fwNameOpen} onOpenChange={setFwNameOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="combobox"
+                role="combobox"
+                aria-expanded={fwNameOpen}
+                className={cn(
+                  "w-full justify-between shadow-sm",
+                  selectedFwName && "bg-[var(--combobox-item-hover-bg)] text-white"
+                )}
+                id="fw-name-filter"
+              >
+                {selectedFwName
+                  ? firewallOptions.find((option) => option.value === selectedFwName)?.label
+                  : "Select firewall..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
           <PopoverContent className="w-[250px] p-0">
             <Command>
               <CommandInput placeholder="Search firewall..." />
@@ -163,7 +163,7 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
               aria-expanded={vdomsOpen}
               className={cn(
                 "w-[250px] justify-between shadow-sm",
-                vdomName && "bg-[var(--combobox-item-hover-bg)] text-accent-foreground"
+                vdomName && "bg-[var(--combobox-item-hover-bg)] text-white"
               )}
               id="vdom-name-filter"
             >
@@ -208,7 +208,7 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
         </Popover>
       </div>
       
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-start mt-6">
         <Button
           onClick={handleApplyFilter}
           className="bg-[var(--filter-button-primary-bg)] text-[var(--filter-button-primary-text)] shadow-[var(--filter-button-primary-shadow)] hover:bg-[var(--filter-button-primary-hover-bg)] hover:shadow-[var(--filter-button-primary-hover-shadow)] transition-all"
@@ -218,7 +218,7 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
         <Button
           variant="outline"
           onClick={handleClearFilter}
-          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] transition-all"
+          className="bg-[var(--filter-button-secondary-bg)] text-[var(--filter-button-secondary-text)] border-[var(--filter-button-secondary-border)] hover:bg-[var(--filter-button-secondary-hover-bg)] hover:border-[var(--filter-button-secondary-hover-border)] hover:text-[var(--filter-button-secondary-hover-text)] transition-all"
         >
           Clear
         </Button>

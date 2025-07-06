@@ -18,12 +18,17 @@ def read_firewalls(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, le=200),
     fw_name: Optional[str] = None,
+    sort_by: Optional[str] = Query(None, description="Sort by field: fw_name, total_vdoms"),
+    sort_order: Optional[str] = Query("asc", description="Sort order: asc or desc"),
     db: Session = Depends(get_db)
 ):
     """
-    Retrieve firewalls with optional filtering by name.
+    Retrieve firewalls with optional filtering by name and sorting.
     """
-    db_firewalls, total_count = crud.get_firewalls(db, skip=skip, limit=limit, fw_name=fw_name)
+    db_firewalls, total_count = crud.get_firewalls(
+        db, skip=skip, limit=limit, fw_name=fw_name,
+        sort_by=sort_by, sort_order=sort_order
+    )
     # Convert SQLAlchemy models to Pydantic schemas
     firewalls = [FirewallResponse.from_orm(fw) for fw in db_firewalls]
     return {"items": firewalls, "total_count": total_count}
