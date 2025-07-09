@@ -122,7 +122,7 @@ export default async function RoutesPage({
                     EXIT INTERFACE
                   </SortableTableHead>
                   <SortableTableHead sortKey="vdom_name" className="text-sm text-white font-semibold">
-                    VDOM
+                    VDOM NAME
                   </SortableTableHead>
                   <TableHead className="text-sm text-white font-semibold">LAST UPDATED</TableHead>
                 </TableRow>

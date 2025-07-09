@@ -40,6 +40,33 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
   const [vdomOptions, setVdomOptions] = React.useState<{ label: string; value: string }[]>([]);
   const [isLoadingVdoms, setIsLoadingVdoms] = React.useState(false);
 
+  // Load VDOMs when component mounts with initial firewall name
+  React.useEffect(() => {
+    if (initialFwName && vdomOptions.length === 0) {
+      const loadInitialVdoms = async () => {
+        setIsLoadingVdoms(true);
+        try {
+          console.log("Loading initial VDOMs for firewall:", initialFwName);
+          const vdomsResponse = await getVdoms({ fw_name: initialFwName });
+          console.log("Initial VDOMs response:", vdomsResponse);
+          const vdoms = vdomsResponse.items;
+          const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
+            label: vdom.vdom_name,
+            value: vdom.vdom_name,
+          }));
+          console.log("Initial VDOM options:", vdomOptions);
+          setVdomOptions(vdomOptions);
+        } catch (error) {
+          console.error("Failed to fetch initial VDOMs:", error);
+          setVdomOptions([]);
+        } finally {
+          setIsLoadingVdoms(false);
+        }
+      };
+      loadInitialVdoms();
+    }
+  }, [initialFwName]);
+
   const firewallOptions = firewalls.map((fw: FirewallResponse) => ({
     label: fw.fw_name,
     value: fw.fw_name,
@@ -119,12 +146,17 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
                           // Fetch VDOMs for the selected firewall
                           setIsLoadingVdoms(true);
                           try {
+                            console.log("Fetching VDOMs for firewall:", newValue);
                             const vdomsResponse = await getVdoms({ fw_name: newValue });
+                            console.log("VDOMs response:", vdomsResponse);
                             const vdoms = vdomsResponse.items;
-                            setVdomOptions(vdoms.map((vdom: VDOMResponse) => ({
+                            console.log("VDOMs items:", vdoms);
+                            const vdomOptions = vdoms.map((vdom: VDOMResponse) => ({
                               label: vdom.vdom_name,
                               value: vdom.vdom_name,
-                            })));
+                            }));
+                            console.log("VDOM options:", vdomOptions);
+                            setVdomOptions(vdomOptions);
                           } catch (error) {
                             console.error("Failed to fetch VDOMs:", error);
                             setVdomOptions([]);
@@ -166,42 +198,62 @@ export function VdomsFilter({ firewalls, initialFwName, initialVdomName }: Vdoms
                 vdomName && "bg-[var(--combobox-item-hover-bg)] text-white"
               )}
               id="vdom-name-filter"
+              onClick={() => {
+                console.log("VDOM button clicked, vdomOptions:", vdomOptions);
+                console.log("selectedFwName:", selectedFwName);
+                console.log("isLoadingVdoms:", isLoadingVdoms);
+              }}
             >
               {isLoadingVdoms ? (
                 "Loading VDOMs..."
               ) : vdomName ? (
                 vdomOptions.find((option) => option.value === vdomName)?.label || vdomName
+              ) : selectedFwName ? (
+                vdomOptions.length > 0 ? "Select VDOM..." : "No VDOMs found"
               ) : (
-                "Select VDOM..."
+                "Select firewall first..."
               )}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[250px] p-0">
-            <Command>
+          <PopoverContent className="w-[250px] p-0" align="start">
+            <Command shouldFilter={false}>
               <CommandInput placeholder="Search VDOM..." />
               <CommandList>
-                <CommandEmpty>No VDOM found.</CommandEmpty>
-                <CommandGroup>
-                  {vdomOptions.map((option) => (
-                    <CommandItem
-                      key={option.value}
-                      value={option.value}
-                      onSelect={(currentValue) => {
-                        setVdomName(currentValue === vdomName ? "" : currentValue);
-                        setVdomsOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          vdomName === option.value ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {option.label}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+                {vdomOptions.length === 0 ? (
+                  <CommandEmpty>
+                    {selectedFwName ? "No VDOMs found for this firewall." : "Select a firewall first."}
+                  </CommandEmpty>
+                ) : (
+                  <CommandGroup>
+                    {vdomOptions.map((option) => (
+                      <CommandItem
+                        key={option.value}
+                        value={option.label}
+                        keywords={[option.value, option.label]}
+                        onSelect={() => {
+                          console.log("VDOM selected:", option.value);
+                          setVdomName(option.value === vdomName ? "" : option.value);
+                          setVdomsOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            vdomName === option.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {option.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+                {vdomOptions.length === 0 && selectedFwName && (
+                  <CommandEmpty>No VDOMs found for this firewall.</CommandEmpty>
+                )}
+                {vdomOptions.length === 0 && !selectedFwName && (
+                  <CommandEmpty>Select a firewall first.</CommandEmpty>
+                )}
               </CommandList>
             </Command>
           </PopoverContent>

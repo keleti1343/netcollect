@@ -111,7 +111,7 @@ export default async function InterfacesPage({
               <Table className="border-collapse">
                 <TableHeader>
                   <TableRow className="bg-[#202A44] hover:bg-[#202A44] h-9">
-                    <SortableTableHead sortKey="interface_name" className="text-sm text-white font-semibold">NAME</SortableTableHead>
+                    <SortableTableHead sortKey="interface_name" className="text-sm text-white font-semibold">INTERFACE NAME</SortableTableHead>
                     <TableHead className="text-sm text-white font-semibold">IP ADDRESS</TableHead>
                     <SortableTableHead sortKey="vdom_name" className="text-sm text-white font-semibold">VDOM NAME</SortableTableHead>
                     <TableHead className="text-sm text-white font-semibold">DESCRIPTION</TableHead>
