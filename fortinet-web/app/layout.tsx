@@ -4,7 +4,6 @@ import "./globals.css";
 import { AppSidebar } from "../components/app-sidebar";
 import { ErrorBoundary } from "../components/error-boundary";
 import LoadingSpinner from "../components/loading-spinner";
-import { PrefetchManager } from "../components/prefetch-manager";
 import { Suspense } from "react";
 
 const inter = Inter({
@@ -30,7 +29,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
-        <PrefetchManager />
         <div className="flex h-screen">
           <AppSidebar />
           <main className="flex-1 p-6 overflow-auto px-4 sm:px-6 lg:px-8">

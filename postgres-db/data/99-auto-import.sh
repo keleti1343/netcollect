@@ -11,8 +11,15 @@ echo "Checking for existing data to import..."
 # Schema file location
 SCHEMA_FILE="/docker-entrypoint-initdb.d/schema.sql"
 
-# Check if export file exists (look for any export files)
-LATEST_EXPORT=$(find /exports -name "export_data_*.sql" -type f 2>/dev/null | sort -r | head -n1)
+# Check if export file exists (use symlink first, fallback to finding latest)
+if [ -L "/exports/latest_export.sql" ] && [ -f "/exports/latest_export.sql" ]; then
+    LATEST_EXPORT="/exports/latest_export.sql"
+    echo "Using symlinked latest export: $LATEST_EXPORT"
+else
+    # Fallback to finding latest export file directly
+    LATEST_EXPORT=$(find /exports -name "export_data_*.sql" -type f 2>/dev/null | sort -r | head -n1)
+    echo "Using found latest export: $LATEST_EXPORT"
+fi
 
 if [ -n "$LATEST_EXPORT" ] && [ -f "$LATEST_EXPORT" ]; then
     echo "Found export file: $LATEST_EXPORT"

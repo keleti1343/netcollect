@@ -44,7 +44,7 @@ export function PrefetchManager() {
           router.prefetch(route);
           
           // Simulate prefetch completion (Next.js prefetch is async but doesn't return a promise)
-          await new Promise(resolve => setTimeout(resolve, 100 + i * 50));
+          await new Promise(resolve => setTimeout(resolve, 50 + i * 25));
           
           setPrefetchState(prev => ({ ...prev, [route]: 'loaded' }));
         } catch (error) {
@@ -54,11 +54,11 @@ export function PrefetchManager() {
       }
 
       // Hide indicator after all prefetching is complete
-      setTimeout(() => setShowIndicator(false), 1000);
+      setTimeout(() => setShowIndicator(false), 100);
     };
 
     // Start prefetching after a short delay to not block initial render
-    const timer = setTimeout(prefetchRoutes, 500);
+    const timer = setTimeout(prefetchRoutes, 50);
     
     return () => clearTimeout(timer);
   }, [router]);
@@ -80,26 +80,8 @@ export function PrefetchManager() {
     };
   }, [handleLinkHover]);
 
-  if (!showIndicator) return null;
-
-  const loadedCount = Object.values(prefetchState).filter(state => state === 'loaded').length;
-  const totalCount = MAIN_ROUTES.length;
-  const progress = (loadedCount / totalCount) * 100;
-
-  return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-blue-600 text-white text-xs py-1 px-4 flex items-center justify-between">
-      <span>Optimizing navigation...</span>
-      <div className="flex items-center space-x-2">
-        <div className="w-24 h-1 bg-blue-800 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-white transition-all duration-300 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <span className="text-xs">{loadedCount}/{totalCount}</span>
-      </div>
-    </div>
-  );
+  // Temporarily disable the indicator to test
+  return null;
 }
 
 // Hook for components to trigger prefetch on hover
