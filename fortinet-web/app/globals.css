@@ -175,7 +175,7 @@
   --color-neutral: #f1f5f9;
  
   /* Table standardization */
-  --table-row-height: 3.5rem;
+  --table-row-height: 2rem;
   --table-header-bg-start: #f8fafc;
   --table-header-bg-end: #f1f5f9;
   --table-row-border: #e2e8f0;
@@ -189,8 +189,8 @@
   
   --table-cell-font-size: 0.875rem;
   --table-cell-line-height: 1.25rem;
-  --table-cell-padding-x: 1rem;
-  --table-cell-padding-y: 1rem;
+  --table-cell-padding-x: 0.25rem;
+  --table-cell-padding-y: 0.125rem;
   --table-cell-text-color: var(--text-primary);
   --table-cell-primary-font-weight: 500;
   --table-cell-primary-color: var(--text-primary);
@@ -817,4 +817,18 @@
 .card-description-enhanced {
   @apply text-sm mt-1;
   color: var(--text-secondary);
+}
+
+/* Compact table variant for even denser tables */
+.table-compact {
+  --table-cell-padding-x: 0.375rem; /* 6px */
+  --table-cell-padding-y: 0.25rem; /* 4px */
+  --table-row-height: 2rem; /* Even more compact row height */
+}
+
+/* Extra compact table variant for maximum density */
+.table-extra-compact {
+  --table-cell-padding-x: 0.25rem; /* 4px */
+  --table-cell-padding-y: 0.125rem; /* 2px */
+  --table-row-height: 1.75rem; /* Minimal row height */
 }
