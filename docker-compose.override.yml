@@ -25,39 +25,31 @@ services:
     ports:
       - "8002:8000"  # Expose for direct access during development
 
-  # Development overrides for Next.js services
+  # Production overrides for Next.js services (using production build)
   fortinet-web-1:
     build:
       context: ./fortinet-web
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=/api
-    volumes:
-      - ./fortinet-web:/app
-      - /app/node_modules
-      - /app/.next
     ports:
       - "3001:3000"  # Expose for direct access during development
 
   fortinet-web-2:
     build:
       context: ./fortinet-web
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=/api
-    volumes:
-      - ./fortinet-web:/app
-      - /app/node_modules
-      - /app/.next
     ports:
       - "3002:3000"  # Expose for direct access during development
 
   # Development database with exposed port
-  supabase-db:
+  postgres-db:
     ports:
-      - "56322:5432"  # Expose database for direct access
+      - "5433:5432"  # Expose database for direct access
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=postgres
@@ -68,13 +60,20 @@ services:
     ports:
       - "6379:6379"  # Expose Redis for direct access
 
-  # Development nginx with debug logging
+  # Development nginx with debug logging and enhanced configuration
   nginx:
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
     environment:
       - NGINX_DEBUG=true
+      - NGINX_SKIP_TEST=true  # Skip config test in development
+      # Development-friendly rate limits
+      - NGINX_API_RATE_LIMIT=6000
+      - NGINX_WEB_RATE_LIMIT=2200
+      - NGINX_HEALTH_RATE_LIMIT=1800
+      # Smaller zone sizes for development
+      - NGINX_API_ZONE_SIZE=5m
+      - NGINX_WEB_ZONE_SIZE=5m
+      - NGINX_HEALTH_ZONE_SIZE=2m
+      - NGINX_CONN_ZONE_SIZE=5m
 
   # Always include testloader in development
   testloader:
@@ -84,3 +83,16 @@ services:
     environment:
       - NODE_ENV=development
       - TARGET_URL=http://nginx
+
+  # Database manager for development
+  db-manager:
+    environment:
+      - DB_HOST=postgres-db
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=postgres
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres-db/scripts:/scripts
+      - ./postgres-db/exports:/exports
+      - ./postgres-db/data:/docker-entrypoint-initdb.d
+    profiles: []  # Remove management profile to always include in development

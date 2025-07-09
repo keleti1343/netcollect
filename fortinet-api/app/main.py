@@ -1,8 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import logging
 import os
 from datetime import datetime
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Import your existing routers here
 from app.routers import firewall, vdom, interface, route, vip, search
@@ -18,26 +23,25 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=["*"],  # Configure appropriately for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Health check endpoint
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Starting Fortinet API server")
+    logger.info(f"Workers configured: {os.environ.get('WORKERS', 1)}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Shutting down Fortinet API server")
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint for load balancer and monitoring"""
-    return JSONResponse(
-        status_code=200,
-        content={
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
-            "service": "fortinet-api",
-            "version": "1.0.0",
-            "environment": os.getenv("ENVIRONMENT", "development")
-        }
-    )
+    return {"status": "healthy", "service": "fortinet-api"}
 
 # Root endpoint
 @app.get("/")

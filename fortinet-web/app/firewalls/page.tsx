@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/empty-state"; // Import EmptyState
 import { FilterSection } from "@/components/ui/FilterSection"; // Import FilterSection
 import { SortableTableHead } from "@/components/ui/sortable-table-head"; // Import SortableTableHead
 import { PageFeatures, FeatureTypes } from "@/components/ui/page-features"; // Import PageFeatures
+import { RateLimitError } from "@/components/rate-limit-error"; // Import RateLimitError
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -56,7 +57,8 @@ export default function FirewallsPage() {
 
     } catch (err) {
       console.error("Failed to fetch data:", err);
-      setError("Failed to load data. Please try again.");
+      const errorMessage = err instanceof Error ? err.message : "Failed to load data. Please try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -169,6 +171,30 @@ export default function FirewallsPage() {
 
   // Error state
   if (error) {
+    // Check if it's a rate limit error
+    if (error.includes("RATE_LIMIT_EXCEEDED")) {
+      return (
+        <div className="space-y-4 max-w-7xl mx-auto">
+          <Card className="border shadow-sm">
+            <CardHeader className="bg-muted/50 p-3 pb-2">
+              <CardTitle className="text-2xl font-bold tracking-tight">
+                Firewalls
+                <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
+              </CardTitle>
+              <CardDescription className="text-muted-foreground text-sm mt-1">
+                Manage and monitor your Fortinet firewall devices
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          <RateLimitError
+            onRetry={fetchData}
+            message={error.replace("RATE_LIMIT_EXCEEDED: ", "")}
+          />
+        </div>
+      );
+    }
+
+    // Generic error
     return (
       <div className="space-y-6">
         <h1 className="text-3xl">Firewalls</h1>
@@ -326,7 +352,14 @@ function VdomsList({ firewallId, firewallName }: { firewallId: number, firewallN
         setVdoms(vdomsData);
       } catch (err) {
         console.error('Error loading VDOMs:', err);
-        setError('Failed to load VDOMs');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load VDOMs';
+        
+        // Check if it's a rate limit error
+        if (errorMessage.includes('RATE_LIMIT_EXCEEDED')) {
+          setError('Rate limit exceeded. Please wait a moment and try again.');
+        } else {
+          setError('Failed to load VDOMs');
+        }
       } finally {
         setLoading(false);
       }
@@ -344,9 +377,17 @@ function VdomsList({ firewallId, firewallName }: { firewallId: number, firewallN
   }
 
   if (error) {
+    const isRateLimit = error.includes('Rate limit exceeded');
     return (
-      <div className="flex items-center justify-center py-4">
-        <div className="text-xs text-red-500">{error}</div>
+      <div className="flex flex-col items-center justify-center py-4 px-3 min-h-[200px]">
+        <div className={`text-xs mb-2 text-center ${isRateLimit ? 'text-amber-600' : 'text-red-500'}`}>
+          {error}
+        </div>
+        {isRateLimit && (
+          <div className="text-xs text-muted-foreground text-center">
+            The system is temporarily limiting requests to prevent overload.
+          </div>
+        )}
       </div>
     );
   }

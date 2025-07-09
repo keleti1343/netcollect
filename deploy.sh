@@ -31,6 +31,8 @@ setup_environment() {
             HEALTH_URL="http://localhost"
             API_PORTS="8000"
             WEB_PORTS="3000"
+            # Explicitly disable override file for production
+            export COMPOSE_FILE="docker-compose.yml"
             ;;
         "development"|"dev")
             ENVIRONMENT="development"
@@ -187,7 +189,7 @@ deploy_production() {
     
     # Start database and cache first
     log_info "Starting database and cache services..."
-    $DOCKER_COMPOSE $COMPOSE_FILES up -d supabase-db redis
+    $DOCKER_COMPOSE $COMPOSE_FILES up -d postgres-db redis
     
     # Wait for database to be ready
     log_info "Waiting for database to be ready..."
@@ -440,7 +442,7 @@ handle_command() {
             fi
             
             # Show stats for all containers
-            docker stats fortinet-api-1 fortinet-api-2 fortinet-nginx fortinet-redis fortinet-supabase-db fortinet-web-1 fortinet-web-2
+            docker stats fortinet-api-1 fortinet-api-2 fortinet-nginx fortinet-redis postgres-db fortinet-web-1 fortinet-web-2
             ;;
         "test")
             if [ "$ENVIRONMENT" = "debug" ]; then

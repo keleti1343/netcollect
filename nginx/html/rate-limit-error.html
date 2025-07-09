@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Limit Exceeded - Fortinet Network Visualizer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            margin: 1rem;
+        }
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #f59e0b;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        p {
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .retry-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .retry-btn:hover {
+            background: #2563eb;
+        }
+        .countdown {
+            font-weight: bold;
+            color: #f59e0b;
+        }
+        .tips {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .tips h3 {
+            margin-top: 0;
+            color: #374151;
+            font-size: 1rem;
+        }
+        .tips ul {
+            margin: 0.5rem 0 0 0;
+            padding-left: 1.2rem;
+        }
+        .tips li {
+            color: #6b7280;
+            margin-bottom: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">⏱️</div>
+        <h1>Too Many Requests</h1>
+        <p>
+            You're making requests a bit too quickly! Our system has temporarily limited your access 
+            to ensure optimal performance for all users.
+        </p>
+        <p>
+            Please wait <span class="countdown" id="countdown">30</span> seconds before trying again.
+        </p>
+        
+        <button class="retry-btn" onclick="window.location.reload()" id="retryBtn" disabled>
+            Retry in <span id="btnCountdown">30</span>s
+        </button>
+
+        <div class="tips">
+            <h3>💡 Tips to avoid rate limits:</h3>
+            <ul>
+                <li>Wait for pages to fully load before navigating</li>
+                <li>Avoid rapid clicking or refreshing</li>
+                <li>Use filters to reduce data requests</li>
+                <li>Consider bookmarking frequently used pages</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let countdown = 30;
+        const countdownEl = document.getElementById('countdown');
+        const btnCountdownEl = document.getElementById('btnCountdown');
+        const retryBtn = document.getElementById('retryBtn');
+
+        const timer = setInterval(() => {
+            countdown--;
+            countdownEl.textContent = countdown;
+            btnCountdownEl.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(timer);
+                retryBtn.disabled = false;
+                retryBtn.innerHTML = 'Retry Now';
+                retryBtn.style.background = '#10b981';
+            }
+        }, 1000);
+
+        // Auto-redirect after countdown
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

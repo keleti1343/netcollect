@@ -1,5 +1,12 @@
+# ============================================================================
+# PHASE 5: DOCKER COMPOSE DYNAMIC CONFIGURATION
+# ============================================================================
+# All service configurations now use environment variables for zero-rebuild
+# configuration changes. Supports scaling, resource limits, and health checks.
+# ============================================================================
+
 services:
-  # Load Balancer
+  # Load Balancer - Dynamic Configuration
   nginx:
     build: ./nginx
     container_name: fortinet-nginx
@@ -17,141 +24,357 @@ services:
     volumes:
       - nginx-logs:/var/log/nginx
     restart: unless-stopped
+    environment:
+      # Pass all nginx configuration to container
+      - NGINX_API_RATE_LIMIT=${NGINX_API_RATE_LIMIT:-2000}
+      - NGINX_WEB_RATE_LIMIT=${NGINX_WEB_RATE_LIMIT:-2200}
+      - NGINX_HEALTH_RATE_LIMIT=${NGINX_HEALTH_RATE_LIMIT:-1800}
+      - NGINX_API_BURST=${NGINX_API_BURST:-10}
+      - NGINX_WEB_BURST=${NGINX_WEB_BURST:-20}
+      - NGINX_HEALTH_BURST=${NGINX_HEALTH_BURST:-10}
+      - NGINX_API_DELAY=${NGINX_API_DELAY:-5}
+      - NGINX_WEB_DELAY=${NGINX_WEB_DELAY:-10}
+      - NGINX_CONNECTION_LIMIT=${NGINX_CONNECTION_LIMIT:-20}
+      - NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-auto}
+      - NGINX_WORKER_CONNECTIONS=${NGINX_WORKER_CONNECTIONS:-1024}
+      - NGINX_KEEPALIVE_TIMEOUT=${NGINX_KEEPALIVE_TIMEOUT:-65}
+      - NGINX_CLIENT_MAX_BODY_SIZE=${NGINX_CLIENT_MAX_BODY_SIZE:-10M}
+      - NGINX_SKIP_TEST=${NGINX_SKIP_TEST:-false}
+      
+      # Zone sizing configuration (Enhanced Performance)
+      - NGINX_API_ZONE_SIZE=${NGINX_API_ZONE_SIZE:-10m}
+      - NGINX_WEB_ZONE_SIZE=${NGINX_WEB_ZONE_SIZE:-10m}
+      - NGINX_HEALTH_ZONE_SIZE=${NGINX_HEALTH_ZONE_SIZE:-5m}
+      - NGINX_CONN_ZONE_SIZE=${NGINX_CONN_ZONE_SIZE:-10m}
+      - NGINX_API_ZONE_CAPACITY=${NGINX_API_ZONE_CAPACITY:-160000}
+      - NGINX_WEB_ZONE_CAPACITY=${NGINX_WEB_ZONE_CAPACITY:-160000}
+      - NGINX_HEALTH_ZONE_CAPACITY=${NGINX_HEALTH_ZONE_CAPACITY:-80000}
+      - NGINX_CONN_ZONE_CAPACITY=${NGINX_CONN_ZONE_CAPACITY:-160000}
+      
+      # SSL configuration (Enhanced Security)
+      - NGINX_SSL_ENABLED=${NGINX_SSL_ENABLED:-false}
+      - NGINX_SSL_PROTOCOLS=${NGINX_SSL_PROTOCOLS:-TLSv1.2 TLSv1.3}
+      - NGINX_SSL_CIPHERS=${NGINX_SSL_CIPHERS:-TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256}
+      - NGINX_SSL_SESSION_CACHE=${NGINX_SSL_SESSION_CACHE:-shared:SSL:10m}
+      - NGINX_SSL_SESSION_TIMEOUT=${NGINX_SSL_SESSION_TIMEOUT:-1d}
+      - NGINX_SSL_PREFER_SERVER_CIPHERS=${NGINX_SSL_PREFER_SERVER_CIPHERS:-on}
+    deploy:
+      resources:
+        limits:
+          memory: ${NGINX_MEMORY_LIMIT:-2G}
+          cpus: '${NGINX_CPU_LIMIT:-2.0}'
+        reservations:
+          memory: ${NGINX_MEMORY_RESERVATION:-512M}
+          cpus: '${NGINX_CPU_RESERVATION:-0.5}'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-60s}
 
-  # FastAPI Backend Services (Load Balanced)
+  # FastAPI Backend Services (Load Balanced) - Dynamic Configuration
   fortinet-api-1:
     build: ./fortinet-api
     container_name: fortinet-api-1
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/${POSTGRES_DB}
+      # Database and Redis connections
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379/0
       - API_PORT=8000
-      - ENVIRONMENT=production
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      
+      # Worker Configuration (Phase 4)
+      - API_WORKERS=${API_WORKERS:-1}
+      - API_WORKER_CONNECTIONS=${API_WORKER_CONNECTIONS:-1000}
+      - API_MAX_REQUESTS=${API_MAX_REQUESTS:-1000}
+      - API_MAX_REQUESTS_JITTER=${API_MAX_REQUESTS_JITTER:-100}
+      - API_TIMEOUT=${API_TIMEOUT:-120}
+      - API_KEEPALIVE=${API_KEEPALIVE:-2}
+      - API_BIND_ADDRESS=${API_BIND_ADDRESS:-0.0.0.0:8000}
+      - API_BACKLOG=${API_BACKLOG:-2048}
+      - API_WORKER_CLASS=${API_WORKER_CLASS:-uvicorn.workers.UvicornWorker}
+      - API_PRELOAD_APP=${API_PRELOAD_APP:-true}
+      - API_WORKER_TMP_DIR=${API_WORKER_TMP_DIR:-/dev/shm}
+      - API_GRACEFUL_TIMEOUT=${API_GRACEFUL_TIMEOUT:-30}
+      - API_LOG_LEVEL=${API_LOG_LEVEL:-info}
+      - API_ACCESS_LOG=${API_ACCESS_LOG:--}
+      - API_ERROR_LOG=${API_ERROR_LOG:--}
+      - API_PROC_NAME=${API_PROC_NAME:-fortinet-api}
+      - API_DAEMON=${API_DAEMON:-false}
+      - API_PIDFILE=${API_PIDFILE:-/tmp/gunicorn.pid}
+      - API_USER=${API_USER:-}
+      - API_GROUP=${API_GROUP:-}
+      - API_TMP_UPLOAD_DIR=${API_TMP_UPLOAD_DIR:-}
+      - API_SSL_KEYFILE=${API_SSL_KEYFILE:-}
+      - API_SSL_CERTFILE=${API_SSL_CERTFILE:-}
     depends_on:
-      - supabase-db
+      - postgres-db
       - redis
     networks:
       - backend-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${API_MEMORY_LIMIT:-2G}
+          cpus: '${API_CPU_LIMIT:-2.0}'
+        reservations:
+          memory: ${API_MEMORY_RESERVATION:-1G}
+          cpus: '${API_CPU_RESERVATION:-1.0}'
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-60s}
 
   fortinet-api-2:
     build: ./fortinet-api
     container_name: fortinet-api-2
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@supabase-db:5432/${POSTGRES_DB}
+      # Database and Redis connections
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379/0
       - API_PORT=8000
-      - ENVIRONMENT=production
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      
+      # Worker Configuration (Phase 4) - Same as API-1
+      - API_WORKERS=${API_WORKERS:-1}
+      - API_WORKER_CONNECTIONS=${API_WORKER_CONNECTIONS:-1000}
+      - API_MAX_REQUESTS=${API_MAX_REQUESTS:-1000}
+      - API_MAX_REQUESTS_JITTER=${API_MAX_REQUESTS_JITTER:-100}
+      - API_TIMEOUT=${API_TIMEOUT:-120}
+      - API_KEEPALIVE=${API_KEEPALIVE:-2}
+      - API_BIND_ADDRESS=${API_BIND_ADDRESS:-0.0.0.0:8000}
+      - API_BACKLOG=${API_BACKLOG:-2048}
+      - API_WORKER_CLASS=${API_WORKER_CLASS:-uvicorn.workers.UvicornWorker}
+      - API_PRELOAD_APP=${API_PRELOAD_APP:-true}
+      - API_WORKER_TMP_DIR=${API_WORKER_TMP_DIR:-/dev/shm}
+      - API_GRACEFUL_TIMEOUT=${API_GRACEFUL_TIMEOUT:-30}
+      - API_LOG_LEVEL=${API_LOG_LEVEL:-info}
+      - API_ACCESS_LOG=${API_ACCESS_LOG:--}
+      - API_ERROR_LOG=${API_ERROR_LOG:--}
+      - API_PROC_NAME=${API_PROC_NAME:-fortinet-api}
+      - API_DAEMON=${API_DAEMON:-false}
+      - API_PIDFILE=${API_PIDFILE:-/tmp/gunicorn.pid}
+      - API_USER=${API_USER:-}
+      - API_GROUP=${API_GROUP:-}
+      - API_TMP_UPLOAD_DIR=${API_TMP_UPLOAD_DIR:-}
+      - API_SSL_KEYFILE=${API_SSL_KEYFILE:-}
+      - API_SSL_CERTFILE=${API_SSL_CERTFILE:-}
     depends_on:
-      - supabase-db
+      - postgres-db
       - redis
     networks:
       - backend-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${API_MEMORY_LIMIT:-2G}
+          cpus: '${API_CPU_LIMIT:-2.0}'
+        reservations:
+          memory: ${API_MEMORY_RESERVATION:-1G}
+          cpus: '${API_CPU_RESERVATION:-1.0}'
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-60s}
 
-  # Next.js Frontend Services (Load Balanced)
+  # Next.js Frontend Services (Load Balanced) - Dynamic Configuration
   fortinet-web-1:
     build: ./fortinet-web
     container_name: fortinet-web-1
     environment:
-      - NEXT_PUBLIC_API_URL=http://fortinet-nginx/api
-      - NODE_ENV=production
+      # Basic Next.js configuration
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://fortinet-nginx/api}
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
+      
+      # Client-side Dynamic Configuration (Phase 3)
+      - NEXT_PUBLIC_CLIENT_API_RATE_LIMIT=${NEXT_PUBLIC_CLIENT_API_RATE_LIMIT:-1800}
+      - NEXT_PUBLIC_CLIENT_API_WINDOW_MS=${NEXT_PUBLIC_CLIENT_API_WINDOW_MS:-60000}
+      - NEXT_PUBLIC_CLIENT_API_RETRY_MS=${NEXT_PUBLIC_CLIENT_API_RETRY_MS:-100}
+      - NEXT_PUBLIC_CLIENT_SEARCH_RATE_LIMIT=${NEXT_PUBLIC_CLIENT_SEARCH_RATE_LIMIT:-900}
+      - NEXT_PUBLIC_CLIENT_SEARCH_WINDOW_MS=${NEXT_PUBLIC_CLIENT_SEARCH_WINDOW_MS:-60000}
+      - NEXT_PUBLIC_CLIENT_SEARCH_RETRY_MS=${NEXT_PUBLIC_CLIENT_SEARCH_RETRY_MS:-150}
+      - NEXT_PUBLIC_CLIENT_BULK_RATE_LIMIT=${NEXT_PUBLIC_CLIENT_BULK_RATE_LIMIT:-300}
+      - NEXT_PUBLIC_CLIENT_BULK_WINDOW_MS=${NEXT_PUBLIC_CLIENT_BULK_WINDOW_MS:-60000}
+      - NEXT_PUBLIC_CLIENT_BULK_RETRY_MS=${NEXT_PUBLIC_CLIENT_BULK_RETRY_MS:-500}
+      - NEXT_PUBLIC_CLIENT_DEFAULT_PAGE_SIZE=${NEXT_PUBLIC_CLIENT_DEFAULT_PAGE_SIZE:-25}
+      - NEXT_PUBLIC_CLIENT_MAX_PAGE_SIZE=${NEXT_PUBLIC_CLIENT_MAX_PAGE_SIZE:-100}
+      - NEXT_PUBLIC_CLIENT_AUTO_REFRESH_MS=${NEXT_PUBLIC_CLIENT_AUTO_REFRESH_MS:-30000}
+      - NEXT_PUBLIC_CLIENT_VDOM_REFRESH_MS=${NEXT_PUBLIC_CLIENT_VDOM_REFRESH_MS:-5000}
+      - NEXT_PUBLIC_CLIENT_SEARCH_DEBOUNCE_MS=${NEXT_PUBLIC_CLIENT_SEARCH_DEBOUNCE_MS:-300}
+      - NEXT_PUBLIC_CLIENT_FILTER_DEBOUNCE_MS=${NEXT_PUBLIC_CLIENT_FILTER_DEBOUNCE_MS:-500}
+      - NEXT_PUBLIC_CLIENT_REQUEST_TIMEOUT_MS=${NEXT_PUBLIC_CLIENT_REQUEST_TIMEOUT_MS:-10000}
+      - NEXT_PUBLIC_CLIENT_RETRY_ATTEMPTS=${NEXT_PUBLIC_CLIENT_RETRY_ATTEMPTS:-3}
+      - NEXT_PUBLIC_CLIENT_ENABLE_AUTO_REFRESH=${NEXT_PUBLIC_CLIENT_ENABLE_AUTO_REFRESH:-false}
+      - NEXT_PUBLIC_CLIENT_ENABLE_BULK_OPS=${NEXT_PUBLIC_CLIENT_ENABLE_BULK_OPS:-true}
+      - NEXT_PUBLIC_CLIENT_ENABLE_ADVANCED_FILTERS=${NEXT_PUBLIC_CLIENT_ENABLE_ADVANCED_FILTERS:-true}
+      - NEXT_PUBLIC_CLIENT_ENABLE_EXPORT=${NEXT_PUBLIC_CLIENT_ENABLE_EXPORT:-true}
+      - NEXT_PUBLIC_CLIENT_DEBUG=${NEXT_PUBLIC_CLIENT_DEBUG:-false}
+      - NEXT_PUBLIC_CLIENT_PERF_MONITOR=${NEXT_PUBLIC_CLIENT_PERF_MONITOR:-false}
+      - NEXT_PUBLIC_CLIENT_API_MAX_RETRIES=${NEXT_PUBLIC_CLIENT_API_MAX_RETRIES:-3}
+      - NEXT_PUBLIC_CLIENT_API_RETRY_DELAY_MS=${NEXT_PUBLIC_CLIENT_API_RETRY_DELAY_MS:-1000}
+      - NEXT_PUBLIC_CLIENT_API_BACKOFF_MULTIPLIER=${NEXT_PUBLIC_CLIENT_API_BACKOFF_MULTIPLIER:-2.0}
     depends_on:
       - fortinet-api-1
       - fortinet-api-2
     networks:
       - frontend-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${WEB_MEMORY_LIMIT:-1G}
+          cpus: '${WEB_CPU_LIMIT:-1.0}'
+        reservations:
+          memory: ${WEB_MEMORY_RESERVATION:-512M}
+          cpus: '${WEB_CPU_RESERVATION:-0.5}'
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health/"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-60s}
 
   fortinet-web-2:
     build: ./fortinet-web
     container_name: fortinet-web-2
     environment:
-      - NEXT_PUBLIC_API_URL=http://fortinet-nginx/api
-      - NODE_ENV=production
+      # Basic Next.js configuration
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://fortinet-nginx/api}
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
+      
+      # Client-side Dynamic Configuration (Phase 3) - Same as WEB-1
+      - NEXT_PUBLIC_CLIENT_API_RATE_LIMIT=${NEXT_PUBLIC_CLIENT_API_RATE_LIMIT:-1800}
+      - NEXT_PUBLIC_CLIENT_API_WINDOW_MS=${NEXT_PUBLIC_CLIENT_API_WINDOW_MS:-60000}
+      - NEXT_PUBLIC_CLIENT_API_RETRY_MS=${NEXT_PUBLIC_CLIENT_API_RETRY_MS:-100}
+      - NEXT_PUBLIC_CLIENT_SEARCH_RATE_LIMIT=${NEXT_PUBLIC_CLIENT_SEARCH_RATE_LIMIT:-900}
+      - NEXT_PUBLIC_CLIENT_SEARCH_WINDOW_MS=${NEXT_PUBLIC_CLIENT_SEARCH_WINDOW_MS:-60000}
+      - NEXT_PUBLIC_CLIENT_SEARCH_RETRY_MS=${NEXT_PUBLIC_CLIENT_SEARCH_RETRY_MS:-150}
+      - NEXT_PUBLIC_CLIENT_BULK_RATE_LIMIT=${NEXT_PUBLIC_CLIENT_BULK_RATE_LIMIT:-300}
+      - NEXT_PUBLIC_CLIENT_BULK_WINDOW_MS=${NEXT_PUBLIC_CLIENT_BULK_WINDOW_MS:-60000}
+      - NEXT_PUBLIC_CLIENT_BULK_RETRY_MS=${NEXT_PUBLIC_CLIENT_BULK_RETRY_MS:-500}
+      - NEXT_PUBLIC_CLIENT_DEFAULT_PAGE_SIZE=${NEXT_PUBLIC_CLIENT_DEFAULT_PAGE_SIZE:-25}
+      - NEXT_PUBLIC_CLIENT_MAX_PAGE_SIZE=${NEXT_PUBLIC_CLIENT_MAX_PAGE_SIZE:-100}
+      - NEXT_PUBLIC_CLIENT_AUTO_REFRESH_MS=${NEXT_PUBLIC_CLIENT_AUTO_REFRESH_MS:-30000}
+      - NEXT_PUBLIC_CLIENT_VDOM_REFRESH_MS=${NEXT_PUBLIC_CLIENT_VDOM_REFRESH_MS:-5000}
+      - NEXT_PUBLIC_CLIENT_SEARCH_DEBOUNCE_MS=${NEXT_PUBLIC_CLIENT_SEARCH_DEBOUNCE_MS:-300}
+      - NEXT_PUBLIC_CLIENT_FILTER_DEBOUNCE_MS=${NEXT_PUBLIC_CLIENT_FILTER_DEBOUNCE_MS:-500}
+      - NEXT_PUBLIC_CLIENT_REQUEST_TIMEOUT_MS=${NEXT_PUBLIC_CLIENT_REQUEST_TIMEOUT_MS:-10000}
+      - NEXT_PUBLIC_CLIENT_RETRY_ATTEMPTS=${NEXT_PUBLIC_CLIENT_RETRY_ATTEMPTS:-3}
+      - NEXT_PUBLIC_CLIENT_ENABLE_AUTO_REFRESH=${NEXT_PUBLIC_CLIENT_ENABLE_AUTO_REFRESH:-false}
+      - NEXT_PUBLIC_CLIENT_ENABLE_BULK_OPS=${NEXT_PUBLIC_CLIENT_ENABLE_BULK_OPS:-true}
+      - NEXT_PUBLIC_CLIENT_ENABLE_ADVANCED_FILTERS=${NEXT_PUBLIC_CLIENT_ENABLE_ADVANCED_FILTERS:-true}
+      - NEXT_PUBLIC_CLIENT_ENABLE_EXPORT=${NEXT_PUBLIC_CLIENT_ENABLE_EXPORT:-true}
+      - NEXT_PUBLIC_CLIENT_DEBUG=${NEXT_PUBLIC_CLIENT_DEBUG:-false}
+      - NEXT_PUBLIC_CLIENT_PERF_MONITOR=${NEXT_PUBLIC_CLIENT_PERF_MONITOR:-false}
+      - NEXT_PUBLIC_CLIENT_API_MAX_RETRIES=${NEXT_PUBLIC_CLIENT_API_MAX_RETRIES:-3}
+      - NEXT_PUBLIC_CLIENT_API_RETRY_DELAY_MS=${NEXT_PUBLIC_CLIENT_API_RETRY_DELAY_MS:-1000}
+      - NEXT_PUBLIC_CLIENT_API_BACKOFF_MULTIPLIER=${NEXT_PUBLIC_CLIENT_API_BACKOFF_MULTIPLIER:-2.0}
     depends_on:
       - fortinet-api-1
       - fortinet-api-2
     networks:
       - frontend-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${WEB_MEMORY_LIMIT:-1G}
+          cpus: '${WEB_CPU_LIMIT:-1.0}'
+        reservations:
+          memory: ${WEB_MEMORY_RESERVATION:-512M}
+          cpus: '${WEB_CPU_RESERVATION:-0.5}'
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health/"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-60s}
 
-  # Database Service
-  supabase-db:
-    image: supabase/postgres:15.1.0.147
-    container_name: supabase-db
+  # Database Service - Dynamic Configuration
+  postgres-db:
+    build: ./postgres-db
+    container_name: postgres-db
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_HOST_AUTH_METHOD=trust
+      # PostgreSQL Performance Configuration
+      - POSTGRES_MAX_CONNECTIONS=${DB_MAX_CONNECTIONS:-100}
+      - POSTGRES_SHARED_BUFFERS=${DB_SHARED_BUFFERS:-256MB}
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=${DB_EFFECTIVE_CACHE_SIZE:-1GB}
+      - POSTGRES_WORK_MEM=${DB_WORK_MEM:-4MB}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./postgres-db/data:/docker-entrypoint-initdb.d
+      - ./postgres-db/exports:/exports
     networks:
       - backend-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${DB_MEMORY_LIMIT:-3G}
+          cpus: '${DB_CPU_LIMIT:-2.0}'
+        reservations:
+          memory: ${DB_MEMORY_RESERVATION:-2G}
+          cpus: '${DB_CPU_RESERVATION:-1.0}'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-5}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-60s}
 
-  # Redis Cache Service
+  # Redis Cache Service - Dynamic Configuration
   redis:
     build: ./redis
     container_name: fortinet-redis
+    environment:
+      # Redis Configuration
+      - REDIS_MAXMEMORY=${REDIS_MAXMEMORY:-400M}
+      - REDIS_MAXMEMORY_POLICY=${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+      - REDIS_TIMEOUT=${REDIS_TIMEOUT:-300}
+      - REDIS_TCP_KEEPALIVE=${REDIS_TCP_KEEPALIVE:-60}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     volumes:
       - redis-data:/data
     networks:
       - backend-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${REDIS_MEMORY_LIMIT:-512M}
+          cpus: '${REDIS_CPU_LIMIT:-0.5}'
+        reservations:
+          memory: ${REDIS_MEMORY_RESERVATION:-256M}
+          cpus: '${REDIS_CPU_RESERVATION:-0.25}'
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-60s}
 
-  # Load Testing Service
+  # Load Testing Service - Dynamic Configuration
   testloader:
     build: ./testloader
     container_name: fortinet-testloader
     environment:
       - TARGET_URL=http://nginx
+      - LOAD_TEST_CONCURRENCY=${LOAD_TEST_CONCURRENCY:-10}
+      - LOAD_TEST_REQUESTS=${LOAD_TEST_REQUESTS:-1000}
+      - LOAD_TEST_DURATION=${LOAD_TEST_DURATION:-60}
     depends_on:
       - nginx
     networks:
@@ -159,6 +382,30 @@ services:
     profiles:
       - testing
     command: ["sleep", "infinity"]  # Keep container running for manual testing
+
+  # Database Management Service - Dynamic Configuration
+  db-manager:
+    build: ./postgres-db
+    container_name: fortinet-db-manager
+    ports:
+      - "${DB_MANAGER_PORT:-5433}:5432"
+    environment:
+      - DB_HOST=postgres-db
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=postgres
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      - ./postgres-db/scripts:/scripts
+      - ./postgres-db/exports:/exports
+    networks:
+      - backend-network
+    depends_on:
+      - postgres-db
+    profiles:
+      - management
+    command: ["sleep", "infinity"]  # Keep container running for manual operations
 
 networks:
   frontend-network:

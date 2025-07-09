@@ -17,7 +17,7 @@ import { PageFeatures, FeatureTypes } from "@/components/ui/page-features";
 export default async function InterfacesPage({
   searchParams
 }: {
-  searchParams: { name?: string; ip?: string; vdom_id?: string; page?: string; pageSize?: string; sort_by?: string; sort_order?: string }
+  searchParams: Promise<{ name?: string; ip?: string; vdom_id?: string; page?: string; pageSize?: string; sort_by?: string; sort_order?: string }>
 }) {
   const searchParamsObj = await searchParams;
   const name = searchParamsObj.name;

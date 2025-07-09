@@ -1,40 +1,70 @@
 import { FirewallResponse, VDOMResponse, InterfaceResponse, RouteResponse, VIPResponse } from '../types';
+import { apiRateLimiter, searchRateLimiter } from '@/lib/rate-limiter';
 
 // Handle both client-side and server-side rendering
 const getApiBaseUrl = () => {
   // Server-side rendering (inside Docker container)
   if (typeof window === 'undefined') {
+    // Always use nginx service name for server-side rendering
+    // Both development and production containers can access nginx service
     return 'http://fortinet-nginx/api';
   }
   // Client-side rendering (browser)
   return process.env.NEXT_PUBLIC_API_URL || '/api';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+// Remove cached API_BASE_URL - call getApiBaseUrl() dynamically at request time
+
+// Rate-limited fetch wrapper
+async function rateLimitedFetch(
+  url: string,
+  options: RequestInit = {},
+  rateLimiter = apiRateLimiter
+): Promise<Response> {
+  // Wait for rate limit slot
+  await rateLimiter.waitForSlot(url);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        // Reset rate limiter on 429 to force longer wait
+        rateLimiter.reset(url);
+        throw new Error(`RATE_LIMIT_EXCEEDED: You're making requests too quickly. Please wait a moment and try again.`);
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
 
 export async function getFirewalls(params?: Record<string, string>): Promise<{ items: FirewallResponse[], total_count: number }> {
   const queryParams = params ? new URLSearchParams(params).toString() : '';
-  const url = queryParams ? `${API_BASE_URL}/firewalls/?${queryParams}` : `${API_BASE_URL}/firewalls/`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error(`Failed to fetch firewalls: ${response.status} ${response.statusText}`, errorData);
-    throw new Error(`Failed to fetch firewalls: ${response.status} ${response.statusText}`);
-  }
+  // Critical: Use trailing slash (per guidelines)
+  const apiBaseUrl = getApiBaseUrl();
+  const url = queryParams ? `${apiBaseUrl}/firewalls/?${queryParams}` : `${apiBaseUrl}/firewalls/`;
+  
+  const response = await rateLimitedFetch(url);
   return response.json();
 }
 
 export async function getVdoms(params?: Record<string, string>): Promise<{ items: VDOMResponse[], total_count: number }> {
   try {
     const queryParams = params ? new URLSearchParams(params).toString() : '';
-    const url = queryParams ? `${API_BASE_URL}/vdoms/?${queryParams}` : `${API_BASE_URL}/vdoms/`;
-    const response = await fetch(url, { cache: 'no-store' });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`Failed to fetch vdoms: ${response.status} ${response.statusText}`, errorData);
-      return { items: [], total_count: 0 };
-    }
+    const apiBaseUrl = getApiBaseUrl();
+    const url = queryParams ? `${apiBaseUrl}/vdoms/?${queryParams}` : `${apiBaseUrl}/vdoms/`;
+    const response = await rateLimitedFetch(url, { cache: 'no-store' });
 
     return response.json();
   } catch (error) {
@@ -45,34 +75,26 @@ export async function getVdoms(params?: Record<string, string>): Promise<{ items
 
 export async function getInterfaces(params?: Record<string, string>): Promise<{ items: InterfaceResponse[], total_count: number }> {
   const queryParams = params ? new URLSearchParams(params).toString() : '';
-  const url = queryParams ? `${API_BASE_URL}/interfaces/?${queryParams}` : `${API_BASE_URL}/interfaces/`;
-  const response = await fetch(url, { redirect: 'follow' });
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error(`Failed to fetch interfaces: ${response.status} ${response.statusText}`, errorData);
-    throw new Error(`Failed to fetch interfaces: ${response.status} ${response.statusText}`);
-  }
+  const apiBaseUrl = getApiBaseUrl();
+  const url = queryParams ? `${apiBaseUrl}/interfaces/?${queryParams}` : `${apiBaseUrl}/interfaces/`;
+  const response = await rateLimitedFetch(url, { redirect: 'follow' });
   return response.json();
 }
 
 export async function getRoutes(params?: Record<string, string>): Promise<{ items: RouteResponse[], total_count: number }> {
   const queryParams = new URLSearchParams(params || {});
   queryParams.set('include_vdom', 'true');
-  const url = `${API_BASE_URL}/routes/?${queryParams.toString()}`;
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Failed to fetch routes');
+  const apiBaseUrl = getApiBaseUrl();
+  const url = `${apiBaseUrl}/routes/?${queryParams.toString()}`;
+  const response = await rateLimitedFetch(url);
   return response.json();
 }
 
 export async function getVips(params?: Record<string, string>): Promise<{ items: VIPResponse[], total_count: number }> {
   const queryParams = params ? new URLSearchParams(params).toString() : '';
-  const url = queryParams ? `${API_BASE_URL}/vips/?${queryParams}` : `${API_BASE_URL}/vips/`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error(`Failed to fetch vips: ${response.status} ${response.statusText}`, errorData);
-    throw new Error(`Failed to fetch vips: ${response.status} ${response.statusText}`);
-  }
+  const apiBaseUrl = getApiBaseUrl();
+  const url = queryParams ? `${apiBaseUrl}/vips/?${queryParams}` : `${apiBaseUrl}/vips/`;
+  const response = await rateLimitedFetch(url);
   return response.json();
 }
 
@@ -98,22 +120,18 @@ export async function searchIPs(params: {
   if (params.vips_skip !== undefined) queryParams.set('vips.skip', params.vips_skip.toString());
   if (params.vips_limit !== undefined) queryParams.set('vips.limit', params.vips_limit.toString());
 
-  const url = `${API_BASE_URL}/search/ip?${queryParams.toString()}`;
+  const apiBaseUrl = getApiBaseUrl();
+  const url = `${apiBaseUrl}/search/ip?${queryParams.toString()}`;
   
   try {
     console.log(`Attempting to fetch from URL: ${url}`);
-    const response = await fetch(url, {
+    // Use search rate limiter for IP searches
+    const response = await rateLimitedFetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
       },
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`Failed to search IPs: ${response.status} ${response.statusText}`, errorData);
-      throw new Error(`Failed to search IPs: ${response.status} ${response.statusText}`);
-    }
+    }, searchRateLimiter);
     
     return response.json();
   } catch (error) {
