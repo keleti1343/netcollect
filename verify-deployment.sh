@@ -14,12 +14,25 @@ else
     DOCKER_COMPOSE="docker-compose"
 fi
 
-# Load environment variables
+# Load environment variables safely
 if [ -f ".env" ]; then
+    echo "Loading environment variables from .env..."
+    # Use set +e to prevent script exit on sourcing errors
+    set +e
     source .env
-    echo "✓ Environment file loaded"
+    source_result=$?
+    set -e
+    
+    if [ $source_result -ne 0 ]; then
+        echo "⚠ Warning: Error loading .env file, using defaults"
+        POSTGRES_DB="fortinet_network_collector"
+    else
+        echo "✓ Environment file loaded successfully"
+        # Use the database name from .env or default
+        POSTGRES_DB="${POSTGRES_DB:-fortinet_network_collector}"
+    fi
 else
-    echo "⚠ Warning: .env file not found"
+    echo "⚠ Warning: .env file not found, using defaults"
     POSTGRES_DB="fortinet_network_collector"
 fi
 

@@ -224,18 +224,9 @@ setup_volume_permissions() {
     log_success "Volume permissions setup completed"
 }
 
-# Enhanced database initialization for VPS
+# Enhanced database initialization for VPS (schema-first approach)
 enhanced_database_init() {
     log_info "Performing enhanced database initialization for VPS..."
-    
-    # Check if schema file exists
-    SCHEMA_FILE="./postgres-db/data/schema.sql"
-    if [ ! -f "$SCHEMA_FILE" ]; then
-        log_warning "Schema file not found: $SCHEMA_FILE"
-        log_info "Database will rely on API migrations or auto-initialization"
-    else
-        log_success "Schema file found: $SCHEMA_FILE"
-    fi
     
     # Wait for PostgreSQL to be ready (max 60 seconds)
     log_info "Waiting for PostgreSQL to be ready..."
@@ -258,32 +249,33 @@ enhanced_database_init() {
         sleep 2
     done
     
-    # Check if database already has tables
-    log_info "Checking if database tables already exist..."
-    if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db psql -U postgres -d "${POSTGRES_DB:-fortinet_network_collector}" -c "\dt" 2>/dev/null | grep -q "firewalls"; then
-        log_success "Database tables already exist, skipping initialization"
-        return 0
-    fi
+    # Check if schema file exists in container location
+    SCHEMA_FILE="/docker-entrypoint-initdb.d/schema.sql"
+    log_info "Checking for schema file in container: $SCHEMA_FILE"
     
-    # Apply schema if available
-    if [ -f "$SCHEMA_FILE" ]; then
-        log_info "Applying database schema..."
-        if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db psql -U postgres -d "${POSTGRES_DB:-fortinet_network_collector}" -f /docker-entrypoint-initdb.d/schema.sql 2>/dev/null; then
+    # Apply schema if available (with proper error handling)
+    if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db test -f "$SCHEMA_FILE"; then
+        log_info "Applying database schema with strict error checking..."
+        if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db psql -v ON_ERROR_STOP=1 -U postgres -d "${POSTGRES_DB:-fortinet_network_collector_dev}" -f "$SCHEMA_FILE"; then
             log_success "Database schema applied successfully"
         else
-            log_warning "Failed to apply database schema, API will handle initialization"
+            log_warning "Failed to apply database schema (strict mode), API will handle initialization"
+            return 1
         fi
+    else
+        log_info "No schema file found, database will rely on API migrations"
     fi
     
     # Verify database tables
     log_info "Verifying database tables..."
-    if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db psql -U postgres -d "${POSTGRES_DB:-fortinet_network_collector}" -c "\dt" 2>/dev/null | grep -q "firewalls"; then
+    if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db psql -U postgres -d "${POSTGRES_DB:-fortinet_network_collector_dev}" -c "\dt" 2>/dev/null | grep -q "firewalls"; then
         log_success "Database tables verified successfully"
     else
         log_info "Database tables not found, API will create them on startup"
     fi
     
     log_success "Enhanced database initialization completed"
+    return 0
 }
 
 setup_environment_file() {
@@ -311,6 +303,8 @@ setup_environment_file() {
                         sed -i "s/ENVIRONMENT=production/ENVIRONMENT=development/g" "$ENV_FILE"
                         sed -i "s/NODE_ENV=production/NODE_ENV=development/g" "$ENV_FILE"
                         sed -i "s/fortinet_network_collector/fortinet_network_collector_dev/g" "$ENV_FILE"
+                        # Ensure consistent database name format
+                        sed -i "s/POSTGRES_DB=.*/POSTGRES_DB=fortinet_network_collector_dev/g" "$ENV_FILE"
                         sed -i "s/your_secure_password_here/dev_password_123/g" "$ENV_FILE"
                         sed -i "s/LOG_LEVEL=INFO/LOG_LEVEL=DEBUG/g" "$ENV_FILE"
                         ;;
