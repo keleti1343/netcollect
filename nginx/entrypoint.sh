@@ -87,6 +87,13 @@ validate_number() {
 }
 
 # Validate rate limiting values
+# Validate allowed domains
+if [ -z "${ALLOWED_DOMAINS}" ]; then
+    echo "❌ ERROR: ALLOWED_DOMAINS must be set"
+    exit 1
+fi
+echo "✅ ALLOWED_DOMAINS: ${ALLOWED_DOMAINS}"
+
 validate_number "${NGINX_API_RATE_LIMIT:-2000}" "NGINX_API_RATE_LIMIT" 100 10000
 validate_number "${NGINX_WEB_RATE_LIMIT:-2200}" "NGINX_WEB_RATE_LIMIT" 100 10000
 validate_number "${NGINX_HEALTH_RATE_LIMIT:-1800}" "NGINX_HEALTH_RATE_LIMIT" 100 5000

@@ -1,7 +1,27 @@
+# Map ALLOWED_DOMAINS to a variable for reuse
+map $host $allowed_host {
+    default 0;
+    ~^${ALLOWED_DOMAINS}$ 1;
+}
+
 # Main application server - DYNAMIC CONFIGURATION
 server {
     listen 80;
     server_name _;
+
+    # Block non-allowed domains (444 = No Response)
+    if ($allowed_host = 0) {
+        return 444;
+    }
+
+    # Let's Encrypt challenge
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    {{ if $ENABLE_SSL }}
+    return 301 https://$host$request_uri;
+    {{ end }}
 
     # Connection limits - DYNAMIC: $NGINX_CONNECTION_LIMIT connections per IP
     limit_conn conn_limit_per_ip $NGINX_CONNECTION_LIMIT;
@@ -120,38 +140,36 @@ server {
     }
 }
 
-# SSL configuration (for production with certificates) - DYNAMIC CONFIGURATION
-# Uncomment and configure when SSL is needed
-# server {
-#     listen 443 ssl http2;
-#     server_name your-domain.com;
-#
-#     # SSL Certificate Configuration
-#     ssl_certificate /etc/ssl/certs/your-cert.pem;
-#     ssl_certificate_key /etc/ssl/private/your-key.pem;
-#
-#     # Enhanced SSL Security Settings - DYNAMIC
-#     ssl_protocols ${NGINX_SSL_PROTOCOLS};
-#     ssl_ciphers '${NGINX_SSL_CIPHERS}';
-#     ssl_prefer_server_ciphers ${NGINX_SSL_PREFER_SERVER_CIPHERS};
-#
-#     # SSL Session Configuration - DYNAMIC
-#     ssl_session_cache ${NGINX_SSL_SESSION_CACHE};
-#     ssl_session_timeout ${NGINX_SSL_SESSION_TIMEOUT};
-#     ssl_session_tickets off;
-#
-#     # Additional SSL Security Headers
-#     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-#     add_header X-Frame-Options "DENY" always;
-#     add_header X-Content-Type-Options "nosniff" always;
-#     add_header X-XSS-Protection "1; mode=block" always;
-#     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-#
-#     # SSL Stapling
-#     ssl_stapling on;
-#     ssl_stapling_verify on;
-#     resolver 8.8.8.8 8.8.4.4 valid=300s;
-#     resolver_timeout 5s;
+{{ if $ENABLE_SSL }}
+server {
+    listen 443 ssl;
+    server_name ${ALLOWED_DOMAINS};
+
+    # Block non-allowed SSL domains
+    if ($allowed_host = 0) {
+        return 444;
+    }
+
+    # SSL cert paths (certbot will use first domain)
+    ssl_certificate /etc/letsencrypt/live/${NGINX_HOST}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${NGINX_HOST}/privkey.pem;
+
+    # SSL settings (TLS 1.3 only for security)
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256';
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # SSL Stapling
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
 #
 #     # Connection limits - DYNAMIC: $NGINX_CONNECTION_LIMIT connections per IP
 #     limit_conn conn_limit_per_ip $NGINX_CONNECTION_LIMIT;

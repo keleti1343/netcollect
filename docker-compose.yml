@@ -25,8 +25,15 @@ services:
       - backend-network
     volumes:
       - nginx-logs:/var/log/nginx
+      - ./nginx/cert:/etc/letsencrypt
+      - ./nginx/conf.d:/etc/nginx/conf.d
     restart: unless-stopped
     environment:
+      # Domain restrictions
+      - ALLOWED_DOMAINS=${ALLOWED_DOMAINS}
+      - ENABLE_SSL=${ENABLE_SSL:-false}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-}
+      
       # Pass all nginx configuration to container
       - NGINX_API_RATE_LIMIT=${NGINX_API_RATE_LIMIT:-2000}
       - NGINX_WEB_RATE_LIMIT=${NGINX_WEB_RATE_LIMIT:-2200}
@@ -54,7 +61,7 @@ services:
       - NGINX_CONN_ZONE_CAPACITY=${NGINX_CONN_ZONE_CAPACITY:-160000}
       
       # SSL configuration (Enhanced Security)
-      - NGINX_SSL_ENABLED=${NGINX_SSL_ENABLED:-false}
+      - NGINX_SSL_ENABLED=${ENABLE_SSL:-false}
       - NGINX_SSL_PROTOCOLS=${NGINX_SSL_PROTOCOLS:-TLSv1.2 TLSv1.3}
       - NGINX_SSL_CIPHERS=${NGINX_SSL_CIPHERS:-TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256}
       - NGINX_SSL_SESSION_CACHE=${NGINX_SSL_SESSION_CACHE:-shared:SSL:10m}
