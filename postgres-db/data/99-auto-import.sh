@@ -3,7 +3,7 @@
 # Auto-import script for PostgreSQL initialization
 # This script runs after database initialization and imports data if available
 # Uses schema-first approach to ensure tables exist before data import
-
+ 
 set -e
 
 echo "Checking for existing data to import..."
