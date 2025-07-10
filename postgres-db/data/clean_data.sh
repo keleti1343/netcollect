@@ -7,19 +7,9 @@ set -e
 
 echo "=== Starting Data Cleaning Process ==="
 
-# Create backup directory with proper permissions
-if ! mkdir -p backups; then
-    echo "ERROR: Failed to create backups directory"
-    exit 1
-fi
-chmod 755 backups
+# Create backup directory
+mkdir -p backups
 timestamp=$(date +%Y%m%d_%H%M%S)
-
-# Verify we have write permissions
-if [ ! -w . ]; then
-    echo "ERROR: No write permissions in current directory"
-    exit 1
-fi
 
 # Function to backup and clean a file
 clean_file() {
@@ -28,28 +18,12 @@ clean_file() {
     
     echo "Processing $file..."
     
-    # Verify source file exists and is readable
-    if [ ! -r "$file" ]; then
-        echo "  - ERROR: Cannot read file $file"
-        return 1
-    fi
-    
     # Create backup
-    if ! cp "$file" "$backup_file"; then
-        echo "  - ERROR: Failed to create backup $backup_file"
-        return 1
-    fi
-    chmod 644 "$backup_file"
+    cp "$file" "$backup_file"
     echo "  - Backup created: $backup_file"
     
-    # Verify we can modify the file
-    if [ ! -w "$file" ]; then
-        echo "  - ERROR: Cannot modify file $file"
-        return 1
-    fi
-    
     # Clean the file
-    if ! sed -i \
+    sed -i \
         -e "s/'None'/NULL/g" \
         -e "s/, 'None',/, NULL,/g" \
         -e "s/('None',/(NULL,/g" \
@@ -75,13 +49,9 @@ clean_file() {
         -e "s/oughtn''t/oughtn\\'t/g" \
         -e "s/usedn''t/usedn\\'t/g" \
         -e "s/'''/\\'/g" \
-        "$file"; then
-        echo "  - ERROR: Failed to clean file $file"
-        return 1
-    fi
+        "$file"
     
     echo "  - Cleaned successfully"
-    return 0
 }
 
 # Clean all data files

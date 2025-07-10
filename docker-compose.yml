@@ -8,6 +8,8 @@
 services:
   # Load Balancer - Dynamic Configuration
   nginx:
+    cpus: '${NGINX_CPU_LIMIT:-2.0}'
+    image: nginx:latest
     build: ./nginx
     container_name: fortinet-nginx
     ports:
@@ -62,7 +64,6 @@ services:
       resources:
         limits:
           memory: ${NGINX_MEMORY_LIMIT:-2G}
-          cpus: '${NGINX_CPU_LIMIT:-2.0}'
         reservations:
           memory: ${NGINX_MEMORY_RESERVATION:-512M}
           cpus: '${NGINX_CPU_RESERVATION:-0.5}'
@@ -307,6 +308,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST_AUTH_METHOD=trust
       # PostgreSQL Performance Configuration
       - POSTGRES_MAX_CONNECTIONS=${DB_MAX_CONNECTIONS:-100}
       - POSTGRES_SHARED_BUFFERS=${DB_SHARED_BUFFERS:-256MB}

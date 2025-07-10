@@ -62,14 +62,3 @@ Thumbs.db
 *.bak
 *.backup
 *.tmp
-
-# Keep exports folder and specific SQL files
-!postgres-db/exports/
-postgres-db/exports/*.sql~
-postgres-db/exports/backup_*
-postgres-db/exports/temp_*
-
-# Track these important SQL files
-!postgres-db/exports/schema.sql
-!postgres-db/exports/sample-data.sql
-!postgres-db/exports/latest_export.sql
