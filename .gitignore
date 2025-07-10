@@ -62,3 +62,7 @@ Thumbs.db
 *.bak
 *.backup
 *.tmp
+
+# Keep exports folder but ignore its contents
+!postgres-db/exports/
+postgres-db/exports/*
