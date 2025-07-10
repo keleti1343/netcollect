@@ -1,12 +1,17 @@
 #!/bin/bash
 
-# Enhanced Fortinet Application Deployment Script
+# Enhanced Fortinet Application Deployment Script for Hostinger VPS
 # Multi-environment deployment with production and development support
+# Optimized for VPS deployment with permission handling and system configuration
 
 set -e
 
-echo "🚀 Starting Fortinet Application Deployment"
-echo "=========================================="
+echo "🚀 Starting Fortinet Application Deployment on VPS"
+echo "=================================================="
+
+# VPS Configuration
+VPS_IP="31.97.138.198"
+DOMAIN_NAME="projectsonline.xyz"
 
 # Colors for output
 RED='\033[0;31m'
@@ -28,7 +33,8 @@ setup_environment() {
             ENVIRONMENT="production"
             COMPOSE_FILES="-f docker-compose.yml"
             ENV_FILE=".env"
-            HEALTH_URL="http://localhost"
+            # Use domain name for production health checks
+            HEALTH_URL="http://$DOMAIN_NAME"
             API_PORTS="8000"
             WEB_PORTS="3000"
             # Explicitly disable override file for production
@@ -94,6 +100,192 @@ generate_secret_key() {
     fi
 }
 
+# VPS-specific system configuration check
+check_system_configuration() {
+    log_info "Checking VPS system configuration requirements..."
+    
+    # Check for memory overcommit setting (required by Redis)
+    OVERCOMMIT_VALUE=$(cat /proc/sys/vm/overcommit_memory 2>/dev/null || echo "0")
+    if [ "$OVERCOMMIT_VALUE" != "1" ]; then
+        log_warning "Redis requires vm.overcommit_memory=1, current value: $OVERCOMMIT_VALUE"
+        log_info "Setting vm.overcommit_memory=1 for current session..."
+        
+        # Try to set the value for the current session
+        if command -v sysctl &> /dev/null; then
+            if sudo sysctl vm.overcommit_memory=1 2>/dev/null; then
+                log_success "Memory overcommit setting applied for current session"
+            else
+                log_warning "Failed to set vm.overcommit_memory. Please manually run:"
+                echo "echo \"vm.overcommit_memory = 1\" | sudo tee -a /etc/sysctl.conf"
+                echo "sudo sysctl vm.overcommit_memory=1"
+            fi
+        else
+            log_warning "sysctl command not found. Please manually configure vm.overcommit_memory=1"
+        fi
+        
+        # Add to sysctl.conf for persistence
+        if [ ! -f "/etc/sysctl.conf" ] || ! grep -q "vm.overcommit_memory" "/etc/sysctl.conf" 2>/dev/null; then
+            log_info "Adding vm.overcommit_memory=1 to /etc/sysctl.conf for persistence..."
+            if echo "vm.overcommit_memory = 1" | sudo tee -a /etc/sysctl.conf 2>/dev/null; then
+                log_success "Memory overcommit setting added to /etc/sysctl.conf"
+            else
+                log_warning "Failed to update /etc/sysctl.conf. Please manually add: vm.overcommit_memory = 1"
+            fi
+        fi
+    else
+        log_success "Redis memory overcommit setting correctly configured"
+    fi
+    
+    # Check for locales (required by PostgreSQL)
+    if ! locale -a 2>/dev/null | grep -i "en_US.utf8" &> /dev/null; then
+        log_warning "en_US.UTF-8 locale not found (required by PostgreSQL)"
+        log_info "Attempting to generate required locale..."
+        
+        if command -v locale-gen &> /dev/null; then
+            if sudo locale-gen en_US.UTF-8 2>/dev/null; then
+                log_success "Locale en_US.UTF-8 generated successfully"
+                sudo update-locale LANG=en_US.UTF-8 2>/dev/null || true
+            else
+                log_warning "Failed to generate locale. Please manually run:"
+                echo "sudo locale-gen en_US.UTF-8"
+                echo "sudo update-locale LANG=en_US.UTF-8"
+            fi
+        else
+            log_warning "locale-gen command not found. Please manually configure the en_US.UTF-8 locale"
+        fi
+    else
+        log_success "Required locale en_US.UTF-8 is available"
+    fi
+    
+    log_success "VPS system configuration check completed"
+}
+
+# Setup volume permissions for VPS deployment
+setup_volume_permissions() {
+    log_info "Setting up volume permissions for VPS container data persistence..."
+    
+    # Create required directories if they don't exist
+    mkdir -p ./data/postgres ./data/redis ./data/nginx/logs ./backups
+    
+    # Set proper permissions for PostgreSQL data directory
+    # PostgreSQL runs as user 999 in the container
+    log_info "Setting permissions for PostgreSQL data directory..."
+    if command -v chown &> /dev/null; then
+        if sudo chown -R 999:999 ./data/postgres 2>/dev/null; then
+            log_success "PostgreSQL directory permissions set successfully"
+        else
+            log_warning "Failed to set PostgreSQL directory permissions"
+            log_warning "If you encounter permission errors, manually run: sudo chown -R 999:999 ./data/postgres"
+        fi
+    else
+        log_warning "chown command not found. Please manually set PostgreSQL directory permissions"
+    fi
+    
+    # Set proper permissions for Redis data directory
+    # Redis runs as user 999 in the container
+    log_info "Setting permissions for Redis data directory..."
+    if command -v chown &> /dev/null; then
+        if sudo chown -R 999:999 ./data/redis 2>/dev/null; then
+            log_success "Redis directory permissions set successfully"
+        else
+            log_warning "Failed to set Redis directory permissions"
+            log_warning "If you encounter permission errors, manually run: sudo chown -R 999:999 ./data/redis"
+        fi
+    else
+        log_warning "chown command not found. Please manually set Redis directory permissions"
+    fi
+    
+    # Set permissions for Nginx logs
+    log_info "Setting permissions for Nginx logs directory..."
+    if command -v chmod &> /dev/null; then
+        if sudo chmod -R 777 ./data/nginx/logs 2>/dev/null; then
+            log_success "Nginx logs directory permissions set successfully"
+        else
+            log_warning "Failed to set Nginx logs directory permissions"
+            log_warning "If you encounter permission errors, manually run: sudo chmod -R 777 ./data/nginx/logs"
+        fi
+    else
+        log_warning "chmod command not found. Please manually set Nginx logs directory permissions"
+    fi
+    
+    # Set permissions for backup directory
+    log_info "Setting permissions for backups directory..."
+    if command -v chmod &> /dev/null; then
+        if sudo chmod -R 777 ./backups 2>/dev/null; then
+            log_success "Backups directory permissions set successfully"
+        else
+            log_warning "Failed to set backups directory permissions"
+            log_warning "If you encounter permission errors, manually run: sudo chmod -R 777 ./backups"
+        fi
+    else
+        log_warning "chmod command not found. Please manually set backups directory permissions"
+    fi
+    
+    log_success "Volume permissions setup completed"
+}
+
+# Enhanced database initialization for VPS
+enhanced_database_init() {
+    log_info "Performing enhanced database initialization for VPS..."
+    
+    # Check if schema file exists
+    SCHEMA_FILE="./postgres-db/data/schema.sql"
+    if [ ! -f "$SCHEMA_FILE" ]; then
+        log_warning "Schema file not found: $SCHEMA_FILE"
+        log_info "Database will rely on API migrations or auto-initialization"
+    else
+        log_success "Schema file found: $SCHEMA_FILE"
+    fi
+    
+    # Wait for PostgreSQL to be ready (max 60 seconds)
+    log_info "Waiting for PostgreSQL to be ready..."
+    max_attempts=30
+    attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        attempt=$((attempt+1))
+        
+        if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db pg_isready -U postgres 2>/dev/null; then
+            log_success "PostgreSQL is ready!"
+            break
+        fi
+        
+        if [ $attempt -eq $max_attempts ]; then
+            log_warning "PostgreSQL not ready after $max_attempts attempts, continuing anyway"
+            return 0
+        fi
+        
+        log_info "Waiting for PostgreSQL... (attempt $attempt/$max_attempts)"
+        sleep 2
+    done
+    
+    # Check if database already has tables
+    log_info "Checking if database tables already exist..."
+    if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db psql -U postgres -d "${POSTGRES_DB:-fortinet_network_collector}" -c "\dt" 2>/dev/null | grep -q "firewalls"; then
+        log_success "Database tables already exist, skipping initialization"
+        return 0
+    fi
+    
+    # Apply schema if available
+    if [ -f "$SCHEMA_FILE" ]; then
+        log_info "Applying database schema..."
+        if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db psql -U postgres -d "${POSTGRES_DB:-fortinet_network_collector}" -f /docker-entrypoint-initdb.d/schema.sql 2>/dev/null; then
+            log_success "Database schema applied successfully"
+        else
+            log_warning "Failed to apply database schema, API will handle initialization"
+        fi
+    fi
+    
+    # Verify database tables
+    log_info "Verifying database tables..."
+    if $DOCKER_COMPOSE $COMPOSE_FILES exec -T postgres-db psql -U postgres -d "${POSTGRES_DB:-fortinet_network_collector}" -c "\dt" 2>/dev/null | grep -q "firewalls"; then
+        log_success "Database tables verified successfully"
+    else
+        log_info "Database tables not found, API will create them on startup"
+    fi
+    
+    log_success "Enhanced database initialization completed"
+}
+
 setup_environment_file() {
     log_info "Setting up environment file: $ENV_FILE"
     
@@ -147,17 +339,19 @@ setup_environment_file() {
 }
 
 check_requirements() {
-    log_info "Checking requirements..."
+    log_info "Checking VPS deployment requirements..."
     
     # Check if Docker is installed
     if ! command -v docker &> /dev/null; then
         log_error "Docker is not installed. Please install Docker first."
+        log_info "Run the VPS setup commands from install_script.md"
         exit 1
     fi
     
     # Check if Docker Compose is installed
     if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
         log_error "Docker Compose is not installed. Please install Docker Compose first."
+        log_info "Run the VPS setup commands from install_script.md"
         exit 1
     fi
     
@@ -168,7 +362,49 @@ check_requirements() {
         DOCKER_COMPOSE="docker-compose"
     fi
     
-    log_success "Requirements check passed"
+    # Check for required VPS tools
+    log_info "Checking for required VPS system tools..."
+    for cmd in python3 curl openssl sudo chmod chown; do
+        if ! command -v $cmd &> /dev/null; then
+            log_warning "$cmd is not installed but recommended for VPS deployment"
+        fi
+    done
+    
+    # Check for Python packages if deploying API
+    if [ "$ENVIRONMENT" != "development" ]; then
+        log_info "Checking for required Python packages..."
+        if command -v pip3 &> /dev/null; then
+            # Check for essential packages
+            MISSING_PACKAGES=""
+            for pkg in fastapi uvicorn gunicorn sqlalchemy psycopg2-binary redis pydantic alembic; do
+                if ! pip3 list 2>/dev/null | grep -i "$pkg" &> /dev/null; then
+                    MISSING_PACKAGES="$MISSING_PACKAGES $pkg"
+                fi
+            done
+            
+            if [ -n "$MISSING_PACKAGES" ]; then
+                log_info "Some Python packages may be missing:$MISSING_PACKAGES"
+                log_info "These will be installed inside the containers"
+            fi
+        else
+            log_info "pip3 not found, packages will be installed inside containers"
+        fi
+    fi
+    
+    # Check for Node.js if deploying web frontend
+    if command -v node &> /dev/null; then
+        NODE_VERSION=$(node --version)
+        log_info "Node.js version: $NODE_VERSION"
+        
+        # Check if Node.js version is adequate (>= 18.x)
+        if [[ "$NODE_VERSION" =~ ^v([0-9]+) ]] && [ "${BASH_REMATCH[1]}" -lt 18 ]; then
+            log_warning "Node.js version ${BASH_REMATCH[1]} is below recommended version 18+"
+        fi
+    else
+        log_info "Node.js not found locally, but will be used inside containers"
+    fi
+    
+    log_success "VPS requirements check passed"
 }
 
 build_images() {
@@ -181,7 +417,13 @@ build_images() {
 }
 
 deploy_production() {
-    log_info "Deploying production environment..."
+    log_info "Deploying production environment on VPS..."
+    
+    # Check VPS system configuration
+    check_system_configuration
+    
+    # Set up volume permissions
+    setup_volume_permissions
     
     # Stop existing services
     log_info "Stopping existing services..."
@@ -191,9 +433,11 @@ deploy_production() {
     log_info "Starting database and cache services..."
     $DOCKER_COMPOSE $COMPOSE_FILES up -d postgres-db redis
     
-    # Wait for database to be ready
-    log_info "Waiting for database to be ready..."
-    sleep 30
+    # Wait for database to be ready and initialize it
+    log_info "Initializing database..."
+    enhanced_database_init || {
+        log_warning "Database initialization had issues but continuing deployment"
+    }
     
     # Start API services
     log_info "Starting API services..."
@@ -215,7 +459,9 @@ deploy_production() {
     log_info "Starting load balancer..."
     $DOCKER_COMPOSE $COMPOSE_FILES up -d nginx
     
-    log_success "Production environment deployed successfully"
+    log_success "Production environment deployed successfully on VPS"
+    log_info "Application accessible at: http://$DOMAIN_NAME"
+    log_info "Server IP: $VPS_IP"
 }
 
 deploy_development() {
@@ -326,10 +572,12 @@ show_status() {
     
     case "$ENVIRONMENT" in
         "production")
-            log_info "Production URLs:"
-            echo "  🌐 Web Application: http://localhost"
-            echo "  🔧 API Documentation: http://localhost/api/docs"
-            echo "  ❤️  Health Check: http://localhost/health"
+            log_info "Production URLs (VPS):"
+            echo "  🌐 Web Application: http://$DOMAIN_NAME"
+            echo "  🌐 Web Application (IP): http://$VPS_IP"
+            echo "  🔧 API Documentation: http://$DOMAIN_NAME/api/docs"
+            echo "  ❤️  Health Check: http://$DOMAIN_NAME/health"
+            echo "  🖥️  Server IP: $VPS_IP"
             ;;
         "development")
             log_info "Development URLs:"
@@ -384,15 +632,19 @@ main() {
     # Setup environment configuration
     setup_environment
     
-    # Run deployment steps
+    # Run deployment steps with VPS enhancements
     check_requirements
+    check_system_configuration    # New VPS step
     setup_environment_file
+    setup_volume_permissions      # New VPS step
     build_images
     deploy_services
     
     # Health checks
     if health_check; then
-        log_success "🎉 $ENVIRONMENT deployment completed successfully!"
+        log_success "🎉 $ENVIRONMENT deployment completed successfully on VPS!"
+        log_info "🌐 Application URL: http://$DOMAIN_NAME"
+        log_info "🖥️  Server IP: $VPS_IP"
         show_status
     else
         log_error "Health checks failed. Please check the logs."
