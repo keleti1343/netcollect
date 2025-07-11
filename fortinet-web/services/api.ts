@@ -15,55 +15,38 @@ const getApiBaseUrl = () => {
 
 // Remove cached API_BASE_URL - call getApiBaseUrl() dynamically at request time
 
-// Enhanced fetch wrapper with retry and timeout
+// Rate-limited fetch wrapper
 async function rateLimitedFetch(
   url: string,
   options: RequestInit = {},
-  rateLimiter = apiRateLimiter,
-  maxRetries = 3,
-  retryDelay = 1000
+  rateLimiter = apiRateLimiter
 ): Promise<Response> {
   // Wait for rate limit slot
   await rateLimiter.waitForSlot(url);
   
-  let lastError;
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-      
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Connection': 'keep-alive',
-          'Keep-Alive': 'timeout=300, max=1000',
-          ...options.headers,
-        },
-      });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          rateLimiter.reset(url);
-          throw new Error(`RATE_LIMIT_EXCEEDED`);
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 429) {
+        // Reset rate limiter on 429 to force longer wait
+        rateLimiter.reset(url);
+        throw new Error(`RATE_LIMIT_EXCEEDED: You're making requests too quickly. Please wait a moment and try again.`);
       }
-
-      return response;
-    } catch (error) {
-      lastError = error;
-      if (attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
-      }
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    return response;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
   }
-
-  throw lastError || new Error('Max retries reached');
 }
 
 export async function getFirewalls(params?: Record<string, string>): Promise<{ items: FirewallResponse[], total_count: number }> {
