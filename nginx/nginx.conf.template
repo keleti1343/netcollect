@@ -24,7 +24,11 @@ http {
     sendfile on;
     tcp_nopush on;
     tcp_nodelay on;
-    keepalive_timeout ${NGINX_KEEPALIVE_TIMEOUT};
+    keepalive_timeout 300s;  # Fixed value for stability
+    keepalive_requests 1000; # Added to support persistent connections
+    reset_timedout_connection on; # Reset timed out connections
+    client_body_timeout 60s; # Increased from default
+    client_header_timeout 60s; # Increased from default
     types_hash_max_size 2048;
     client_max_body_size ${NGINX_CLIENT_MAX_BODY_SIZE};
 
@@ -58,6 +62,8 @@ http {
         server fortinet-api-1:8000 max_fails=3 fail_timeout=30s;
         server fortinet-api-2:8000 max_fails=3 fail_timeout=30s;
         keepalive 32;
+        keepalive_requests 1000;
+        keepalive_timeout 300s;
     }
 
     upstream fortinet_web {
@@ -65,6 +71,8 @@ http {
         server fortinet-web-1:3000 max_fails=3 fail_timeout=30s;
         server fortinet-web-2:3000 max_fails=3 fail_timeout=30s;
         keepalive 32;
+        keepalive_requests 1000;
+        keepalive_timeout 300s;
     }
 
     # Include additional configurations
