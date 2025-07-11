@@ -60,22 +60,10 @@ async function rateLimitedFetch(
         await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
       }
     }
+
   }
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        // Reset rate limiter on 429 to force longer wait
-        rateLimiter.reset(url);
-        throw new Error(`RATE_LIMIT_EXCEEDED: You're making requests too quickly. Please wait a moment and try again.`);
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response;
-  } catch (error) {
-    console.error('API request failed:', error);
-    throw error;
-  }
+  throw lastError || new Error('Max retries reached');
 }
 
 export async function getFirewalls(params?: Record<string, string>): Promise<{ items: FirewallResponse[], total_count: number }> {
