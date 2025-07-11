@@ -11,7 +11,7 @@ export default function Home() {
           {/* Title and Description Section */}
           <div className="pb-2">
             <CardTitle className="text-2xl font-bold tracking-tight">
-              Welcome to Fortinet Network Visualizer
+              Welcome to Forti Visualizer
               <div className="h-0.5 w-16 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] mt-1 rounded-full"></div>
             </CardTitle>
             <CardDescription className="text-muted-foreground text-sm mt-1">

@@ -17,7 +17,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fortinet Network Visualizer",
+  title: "Forti Visualizer",
   description: "Visualize and manage Fortinet network devices",
   icons: {
     icon: [

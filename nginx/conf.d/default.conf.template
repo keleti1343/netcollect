@@ -8,13 +8,14 @@ server {
     listen 80;
     server_name ${ALLOWED_DOMAINS};
     
-    # Domain blocking for unauthorized access
-    if ($allowed_host = 0) {
-        return 444;
-    }
+    # Domain blocking for unauthorized access (disabled for internal container communication)
+    # Only block external requests, allow internal container communication
+    # if ($allowed_host = 0) {
+    #     return 444;
+    # }
     
     # Custom error page for unauthorized domains
-    error_page 444 /unauthorized.html;
+    # error_page 444 /unauthorized.html;
 
     # Let's Encrypt challenge
     location /.well-known/acme-challenge/ {
@@ -177,13 +178,14 @@ server {
     listen 443 ssl;
     server_name ${ALLOWED_DOMAINS};
 
-    # Domain blocking for unauthorized access
-    if ($allowed_host = 0) {
-        return 444;
-    }
+    # Domain blocking for unauthorized access (disabled for internal container communication)
+    # Only block external requests, allow internal container communication
+    # if ($allowed_host = 0) {
+    #     return 444;
+    # }
     
     # Custom error page for unauthorized domains
-    error_page 444 /unauthorized.html;
+    # error_page 444 /unauthorized.html;
 
     # SSL cert paths (certbot will use first domain)
     ssl_certificate /etc/letsencrypt/live/${NGINX_HOST}/fullchain.pem;
