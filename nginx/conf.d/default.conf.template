@@ -7,9 +7,21 @@ map $host $allowed_host {
 server {
     listen 80;
     server_name ${ALLOWED_DOMAINS};
-     # Block non-allowed domains (444 = No Response)
+    
+    # Create variable to detect internal container traffic
+    set $internal_request 0;
+    
+    # Mark as internal if request comes from Docker network (typically 172.x.x.x)
+    if ($remote_addr ~ "^172\.") {
+        set $internal_request 1;
+    }
+    
+    # Block non-allowed domains (444 = No Response) but allow internal container requests
     if ($allowed_host = 0) {
-        return 444;
+        # Only block if not an internal request
+        if ($internal_request = 0) {
+            return 444;
+        }
     }
 
     # Let's Encrypt challenge
