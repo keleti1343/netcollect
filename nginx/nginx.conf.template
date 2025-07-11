@@ -57,6 +57,16 @@ http {
     limit_req_zone $binary_remote_addr zone=health:${NGINX_HEALTH_ZONE_SIZE} rate=${NGINX_HEALTH_RATE_LIMIT_NUMERIC}r/s;
     limit_conn_zone $binary_remote_addr zone=conn_limit_per_ip:${NGINX_CONN_ZONE_SIZE};
 
+    # Allow internal Docker network requests
+    geo $internal_network {
+        default 0;
+        172.20.0.0/16 1;  # Frontend network
+        172.21.0.0/16 1;  # Backend network
+        172.16.0.0/12 1;  # Docker default networks (fallback)
+        192.168.0.0/16 1; # Docker custom networks
+        10.0.0.0/8 1;     # Docker custom networks
+    }
+
     # Upstream definitions
     upstream fortinet_api {
         least_conn;
