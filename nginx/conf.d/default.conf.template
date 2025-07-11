@@ -1,24 +1,17 @@
-# Global HTTP settings for connection stability
-http {
-    # Keepalive settings
-    keepalive_timeout 300s;
+# Connection pooling with keepalive
+upstream fortinet_api {
+    server fortinet-api:8000;
+    keepalive 32;
     keepalive_requests 1000;
-    
-    # Connection pooling
-    upstream fortinet_api {
-        server fortinet-api:8000;
-        keepalive 32;
-        keepalive_requests 1000;
-        keepalive_timeout 300s;
-    }
-    
-    upstream fortinet_web {
-        server fortinet-web-1:3000;
-        server fortinet-web-2:3000;
-        keepalive 32;
-        keepalive_requests 1000;
-        keepalive_timeout 300s;
-    }
+    keepalive_timeout 300s;
+}
+
+upstream fortinet_web {
+    server fortinet-web-1:3000;
+    server fortinet-web-2:3000;
+    keepalive 32;
+    keepalive_requests 1000;
+    keepalive_timeout 300s;
 }
 
 # Map ALLOWED_DOMAINS to a variable for reuse
