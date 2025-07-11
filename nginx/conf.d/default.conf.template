@@ -17,9 +17,9 @@ server {
         root /var/www/certbot;
     }
 
-    {{ if $NGINX_SSL_ENABLED }}
-    return 301 https://$host$request_uri;
-    {{ end }}
+    #{{ if $NGINX_SSL_ENABLED }}
+    #return 301 https://$host$request_uri;
+    #{{ end }}
 
     # Connection limits - DYNAMIC: $NGINX_CONNECTION_LIMIT connections per IP
     limit_conn conn_limit_per_ip $NGINX_CONNECTION_LIMIT;
@@ -137,7 +137,7 @@ server {
         root /usr/share/nginx/html;
     }
 }
-{{ if $ENABLE_SSL }}
+
 # SSL configuration (for production with certificates) - DYNAMIC CONFIGURATION
 # Uncomment and configure when SSL is needed
 server {
@@ -274,4 +274,3 @@ server {
          root /usr/share/nginx/html;
      }
  }
-{{ end}}
