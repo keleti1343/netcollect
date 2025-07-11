@@ -22,28 +22,14 @@ server {
         root /var/www/certbot;
     }
 
-    # Force HTTPS redirect for all HTTP requests
-    return 301 https://$host$request_uri;
-
-    # Connection limits - DYNAMIC: $NGINX_CONNECTION_LIMIT connections per IP
-    limit_conn conn_limit_per_ip $NGINX_CONNECTION_LIMIT;
-
-    # Security headers
-    add_header X-Frame-Options "DENY" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-
-    # Health check endpoint - DYNAMIC RATE LIMITING
-    # Rate: $NGINX_HEALTH_RATE_LIMIT r/m (${NGINX_HEALTH_RATE_LIMIT_NUMERIC}r/s), Burst: $NGINX_HEALTH_BURST
+    # Health check endpoint - allow HTTP for internal monitoring
     location /health {
         limit_req zone=health burst=$NGINX_HEALTH_BURST nodelay;
         add_header Content-Type "text/plain" always;
         return 200 "nginx healthy\n";
     }
 
-    # API routes with DYNAMIC rate limiting
-    # Rate: $NGINX_API_RATE_LIMIT r/m (${NGINX_API_RATE_LIMIT_NUMERIC}r/s), Burst: $NGINX_API_BURST, Delay: $NGINX_API_DELAY
+    # API routes - allow HTTP for internal container communication
     location /api/ {
         # Rate limiting with burst and delay - ALL DYNAMIC
         limit_req zone=api burst=$NGINX_API_BURST delay=$NGINX_API_DELAY;
@@ -77,37 +63,19 @@ server {
         proxy_busy_buffers_size 16k;
     }
 
-    # Web application routes with DYNAMIC rate limiting
-    # Rate: $NGINX_WEB_RATE_LIMIT r/m (${NGINX_WEB_RATE_LIMIT_NUMERIC}r/s), Burst: $NGINX_WEB_BURST, Delay: $NGINX_WEB_DELAY
+    # Force HTTPS redirect for all other HTTP requests (excluding API and health)
     location / {
-        limit_req zone=web burst=$NGINX_WEB_BURST delay=$NGINX_WEB_DELAY;
-        limit_req_status 429;
-        
-        error_page 429 /rate-limit-error.html;
-        
-        proxy_pass http://fortinet_web;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Connection stability
-        proxy_ignore_client_abort on;
-        proxy_socket_keepalive on;
-        
-        # Enhanced timeouts
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-        
-        # Enhanced buffer settings
-        proxy_buffering on;
-        proxy_buffer_size 8k;
-        proxy_buffers 16 8k;
-        proxy_busy_buffers_size 16k;
+        return 301 https://$host$request_uri;
     }
+
+    # Connection limits - DYNAMIC: $NGINX_CONNECTION_LIMIT connections per IP
+    limit_conn conn_limit_per_ip $NGINX_CONNECTION_LIMIT;
+
+    # Security headers
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     # Rate limit error page
     location = /rate-limit-error.html {
