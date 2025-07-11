@@ -1,6 +1,7 @@
 import { FirewallResponse, VDOMResponse, InterfaceResponse, RouteResponse, VIPResponse } from '../types';
 import { apiRateLimiter, searchRateLimiter } from '@/lib/rate-limiter';
 
+
 // Handle both client-side and server-side rendering
 const getApiBaseUrl = () => {
   // Server-side rendering (inside Docker container)

@@ -3,7 +3,7 @@ map $host $allowed_host {
     default 0;
     ${ALLOWED_DOMAINS_MAP}
 }
-
+ 
 # Detect internal container requests (Docker network IPs)
 map $remote_addr $is_internal_request {
     default 0;
