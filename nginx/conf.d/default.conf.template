@@ -3,6 +3,23 @@ map $host $allowed_host {
     default 0;
     ${ALLOWED_DOMAINS_MAP}
 }
+
+# Detect internal container requests (Docker network IPs)
+map $remote_addr $is_internal_request {
+    default 0;
+    "~^172\." 1;  # Docker default network
+    "~^192\.168\." 1;  # Alternative Docker network
+    "~^10\." 1;  # Alternative Docker network
+}
+
+# Combined check: Either allowed domain OR internal request
+map "$allowed_host:$is_internal_request" $allow_request {
+    default 0;
+    "0:0" 0;  # Not allowed domain and not internal
+    "0:1" 1;  # Not allowed domain but is internal request
+    "1:0" 1;  # Allowed domain but not internal
+    "1:1" 1;  # Both allowed domain and internal
+}
 # Main application server - DYNAMIC CONFIGURATION
 server {
     listen 80;
