@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Error - Fortinet Network Visualizer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            margin: 1rem;
+        }
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #f59e0b;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        p {
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .retry-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-right: 0.5rem;
+        }
+        .retry-btn:hover {
+            background: #2563eb;
+        }
+        .home-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .home-btn:hover {
+            background: #4b5563;
+        }
+        .brand {
+            color: #3b82f6;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .status-info {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .status-info h3 {
+            margin-top: 0;
+            color: #92400e;
+            font-size: 1rem;
+        }
+        .status-info p {
+            color: #92400e;
+            margin-bottom: 0;
+            font-size: 0.9rem;
+        }
+        .countdown {
+            font-weight: bold;
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="brand">Fortinet Network Visualizer</div>
+        <div class="icon">⚠️</div>
+        <h1>Server Temporarily Unavailable</h1>
+        <p>
+            We're experiencing some technical difficulties. Our team has been notified 
+            and is working to resolve the issue as quickly as possible.
+        </p>
+        <p>
+            The page will automatically retry in <span class="countdown" id="countdown">30</span> seconds.
+        </p>
+        
+        <div>
+            <button class="retry-btn" onclick="window.location.reload()">
+                Retry Now
+            </button>
+            <a href="/" class="home-btn">Go to Dashboard</a>
+        </div>
+
+        <div class="status-info">
+            <h3>🔧 What's happening?</h3>
+            <p>
+                This could be due to server maintenance, high traffic, or a temporary service disruption. 
+                Most issues are resolved within a few minutes. If the problem persists, please contact your system administrator.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let countdown = 30;
+        const countdownEl = document.getElementById('countdown');
+
+        const timer = setInterval(() => {
+            countdown--;
+            countdownEl.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(timer);
+                window.location.reload();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

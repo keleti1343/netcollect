@@ -19,6 +19,13 @@ const robotoMono = Roboto_Mono({
 export const metadata: Metadata = {
   title: "Fortinet Network Visualizer",
   description: "Visualize and manage Fortinet network devices",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' }
+    ],
+    apple: { url: '/favicon.svg', type: 'image/svg+xml' }
+  }
 };
 
 export default function RootLayout({

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - Fortinet Network Visualizer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            margin: 1rem;
+        }
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #ef4444;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        p {
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .home-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+        .home-btn:hover {
+            background: #2563eb;
+        }
+        .back-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #4b5563;
+        }
+        .brand {
+            color: #3b82f6;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .suggestions {
+            background: #f3f4f6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .suggestions h3 {
+            margin-top: 0;
+            color: #374151;
+            font-size: 1rem;
+        }
+        .suggestions ul {
+            margin: 0.5rem 0 0 0;
+            padding-left: 1.2rem;
+        }
+        .suggestions li {
+            color: #6b7280;
+            margin-bottom: 0.3rem;
+        }
+        .suggestions a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .suggestions a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="brand">Fortinet Network Visualizer</div>
+        <div class="icon">🔍</div>
+        <h1>Page Not Found</h1>
+        <p>
+            The page you're looking for doesn't exist or has been moved. 
+            This might happen if you've bookmarked an old link or typed the URL incorrectly.
+        </p>
+        
+        <div>
+            <a href="/" class="home-btn">Go to Dashboard</a>
+            <button onclick="history.back()" class="back-btn">Go Back</button>
+        </div>
+
+        <div class="suggestions">
+            <h3>🧭 Quick Navigation:</h3>
+            <ul>
+                <li><a href="/">Dashboard</a> - Main overview</li>
+                <li><a href="/firewalls">Firewalls</a> - Manage firewall devices</li>
+                <li><a href="/vdoms">VDOMs</a> - Virtual domain management</li>
+                <li><a href="/routes">Routes</a> - Network routing information</li>
+                <li><a href="/interfaces">Interfaces</a> - Network interfaces</li>
+                <li><a href="/vips">VIPs</a> - Virtual IP addresses</li>
+                <li><a href="/search-ips">Search IPs</a> - IP address search</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

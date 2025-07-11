@@ -51,7 +51,7 @@ export function AppSidebar() {
   return (
     <div className="w-64 h-screen flex flex-col bg-gradient-to-b from-[var(--sidebar-bg-start)] to-[var(--sidebar-bg-end)] shadow-[var(--sidebar-shadow)]">
       <div className="h-16 flex items-center px-4 border-b border-gray-800">
-        <Link href="/" className="font-semibold text-lg text-white">
+        <Link href="/" className="font-semibold text-sm text-white whitespace-nowrap overflow-hidden text-ellipsis">
           Fortinet Network Visualizer
         </Link>
       </div>

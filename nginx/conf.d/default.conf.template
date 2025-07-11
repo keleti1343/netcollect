@@ -8,20 +8,21 @@ server {
     listen 80;
     server_name ${ALLOWED_DOMAINS};
     
-    # Temporarily disable domain blocking to allow internal container communication
-    # TODO: Re-implement with proper logic once connection issues are resolved
-    # if ($allowed_host = 0) {
-    #     return 444;
-    # }
+    # Domain blocking for unauthorized access
+    if ($allowed_host = 0) {
+        return 444;
+    }
+    
+    # Custom error page for unauthorized domains
+    error_page 444 /unauthorized.html;
 
     # Let's Encrypt challenge
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
 
-    #{{ if $NGINX_SSL_ENABLED }}
-    #return 301 https://$host$request_uri;
-    #{{ end }}
+    # Force HTTPS redirect for all HTTP requests
+    return 301 https://$host$request_uri;
 
     # Connection limits - DYNAMIC: $NGINX_CONNECTION_LIMIT connections per IP
     limit_conn conn_limit_per_ip $NGINX_CONNECTION_LIMIT;
@@ -154,8 +155,19 @@ server {
     error_page 404 /404.html;
     error_page 500 502 503 504 /50x.html;
     
+    location = /404.html {
+        root /usr/share/nginx/html;
+        internal;
+    }
+    
     location = /50x.html {
         root /usr/share/nginx/html;
+        internal;
+    }
+    
+    location = /unauthorized.html {
+        root /usr/share/nginx/html;
+        internal;
     }
 }
 
@@ -165,11 +177,13 @@ server {
     listen 443 ssl;
     server_name ${ALLOWED_DOMAINS};
 
-    # Temporarily disable domain blocking to allow internal container communication
-    # TODO: Re-implement with proper logic once connection issues are resolved
-    # if ($allowed_host = 0) {
-    #     return 444;
-    # }
+    # Domain blocking for unauthorized access
+    if ($allowed_host = 0) {
+        return 444;
+    }
+    
+    # Custom error page for unauthorized domains
+    error_page 444 /unauthorized.html;
 
     # SSL cert paths (certbot will use first domain)
     ssl_certificate /etc/letsencrypt/live/${NGINX_HOST}/fullchain.pem;
@@ -292,7 +306,18 @@ server {
      error_page 404 /404.html;
      error_page 500 502 503 504 /50x.html;
 #
+     location = /404.html {
+         root /usr/share/nginx/html;
+         internal;
+     }
+#
      location = /50x.html {
          root /usr/share/nginx/html;
+         internal;
+     }
+#
+     location = /unauthorized.html {
+         root /usr/share/nginx/html;
+         internal;
      }
  }
