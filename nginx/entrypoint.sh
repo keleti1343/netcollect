@@ -239,8 +239,7 @@ envsubst '
     ${NGINX_SSL_SESSION_CACHE}
     ${NGINX_SSL_SESSION_TIMEOUT}
     ${NGINX_SSL_PREFER_SERVER_CIPHERS}
-    ${NGINX_HOST}
-    ${ALLOWED_DOMAINS}
+  
 ' < /etc/nginx/nginx.conf.template > "$TEMP_NGINX_DIR/nginx.conf"
 
 if [ $? -eq 0 ]; then
@@ -271,6 +270,8 @@ envsubst '
     ${NGINX_SSL_SESSION_CACHE}
     ${NGINX_SSL_SESSION_TIMEOUT}
     ${NGINX_SSL_PREFER_SERVER_CIPHERS}
+    ${NGINX_HOST}
+    ${ALLOWED_DOMAINS}
 ' < /etc/nginx/conf.d/default.conf.template > "$TEMP_CONF_DIR/default.conf"
 
 if [ $? -eq 0 ]; then
