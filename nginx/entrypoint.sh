@@ -179,6 +179,9 @@ export NGINX_HEALTH_BURST=${NGINX_HEALTH_BURST:-10}
 export NGINX_API_DELAY=${NGINX_API_DELAY:-5}
 export NGINX_WEB_DELAY=${NGINX_WEB_DELAY:-10}
 export ALLOWED_DOMAINS=${ALLOWED_DOMAINS:-demo.projectsonline.xyz}
+# Convert ALLOWED_DOMAINS to map format
+ALLOWED_DOMAINS_MAP=$(echo "$ALLOWED_DOMAINS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/.*/"~^&$" 1;/' | tr '\n' ' ')
+export ALLOWED_DOMAINS_MAP
 
 # Zone sizing configuration
 export NGINX_API_ZONE_SIZE=${NGINX_API_ZONE_SIZE:-10m}
@@ -272,6 +275,7 @@ envsubst '
     ${NGINX_SSL_PREFER_SERVER_CIPHERS}
     ${NGINX_HOST}
     ${ALLOWED_DOMAINS}
+    ${ALLOWED_DOMAINS_MAP}
 ' < /etc/nginx/conf.d/default.conf.template > "$TEMP_CONF_DIR/default.conf"
 
 if [ $? -eq 0 ]; then
