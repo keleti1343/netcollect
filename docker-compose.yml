@@ -437,20 +437,6 @@ networks:
       config:
         - subnet: 172.21.0.0/16
           gateway: 172.21.0.1
-  frontend-network:
-    driver: bridge
-    name: fortinet-frontend
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
-  backend-network:
-    driver: bridge
-    name: fortinet-backend
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
 
 volumes:
   postgres-data:
