@@ -304,6 +304,12 @@ echo "----------------------------------------"
 sed -n '70,85p' "$TEMP_NGINX_DIR/nginx.conf" | nl -v70
 echo ""
 
+# Show current directory and file structure for debugging
+echo "🔍 Current working directory: $(pwd)"
+echo "📂 Contents of $TEMP_NGINX_DIR:"
+ls -lR "$TEMP_NGINX_DIR" | head -20
+
+
 # Test nginx configuration syntax (skip in development mode)
 if [ "${NGINX_SKIP_TEST:-false}" = "true" ]; then
     echo "⚠️  Skipping nginx configuration test (NGINX_SKIP_TEST=true)"
