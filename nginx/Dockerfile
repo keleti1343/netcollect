@@ -21,8 +21,8 @@ RUN chmod +x /entrypoint.sh
 RUN mkdir -p /var/log/nginx
 
 # Create nginx user
-RUN addgroup -g 101 -S nginx && \
-    adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
+#RUN addgroup -g 101 -S nginx && \
+ #   adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
 
 # Set proper permissions
 RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx && \
