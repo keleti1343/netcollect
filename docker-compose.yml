@@ -421,6 +421,25 @@ networks:
   frontend-network:
     driver: bridge
     name: fortinet-frontend
+    labels:
+      com.docker.compose.network: frontend-network  # Add this label
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+
+  backend-network:
+    driver: bridge
+    name: fortinet-backend
+    labels:
+      com.docker.compose.network: backend-network  # Add this label
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
+  frontend-network:
+    driver: bridge
+    name: fortinet-frontend
     ipam:
       config:
         - subnet: 172.20.0.0/16
