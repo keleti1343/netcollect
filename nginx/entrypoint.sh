@@ -140,9 +140,11 @@ echo "----------------------------------------"
 #TEMP_NGINX_DIR="/tmp/nginx"
 #TEMP_CONF_DIR="/tmp/nginx/conf.d"
 # AFTER:
-TEMP_NGINX_DIR="/etc/nginx"
-TEMP_CONF_DIR="/etc/nginx/conf.d"
-
+TEMP_DIR=$(mktemp -d)
+#TEMP_NGINX_DIR="/etc/nginx"
+#TEMP_CONF_DIR="/etc/nginx/conf.d"
+TEMP_NGINX_DIR="$TEMP_DIR"
+TEMP_CONF_DIR="$TEMP_DIR/conf.d"
 echo "📁 Creating temporary directories..."
 #mkdir -p "$TEMP_NGINX_DIR"
 #mkdir -p "$TEMP_CONF_DIR"
@@ -156,7 +158,7 @@ fi
 
 # Copy required nginx files to temporary directory
 echo "📋 Copying required nginx files to temporary directory..."
-#cp /etc/nginx/mime.types "$TEMP_NGINX_DIR/"
+cp /etc/nginx/mime.types "$TEMP_NGINX_DIR/"
 
 if [ $? -eq 0 ]; then
     echo "✅ Required files copied to temporary directory"
@@ -358,7 +360,9 @@ echo "STARTING NGINX..."
 echo "=========================================="
 
 # Start nginx in foreground with temporary configuration
-echo "🚀 Starting nginx with configuration from: $TEMP_NGINX_DIR/nginx.conf"
-exec nginx -c "$TEMP_NGINX_DIR/nginx.conf" -g "daemon off;"
-#cp -r "$TEMP_NGINX_DIR"/* /etc/nginx/
-#exec nginx -g "daemon off;"
+#echo "🚀 Starting nginx with configuration from: $TEMP_NGINX_DIR/nginx.conf"
+#exec nginx -c "$TEMP_NGINX_DIR/nginx.conf" -g "daemon off;"
+cp -r "$TEMP_NGINX_DIR"/* /etc/nginx/
+rm -rf "$TEMP_DIR"
+echo "🚀 Starting nginx with production configuration"
+exec nginx -g "daemon off;"

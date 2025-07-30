@@ -5,7 +5,7 @@ RUN apk add --no-cache curl gettext bash
 
 # Remove default nginx configuration files
 RUN rm /etc/nginx/conf.d/default.conf
-RUN rm -f /etc/nginx/nginx.conf
+#RUN rm -f /etc/nginx/nginx.conf
 
 # Copy template files (NOT final configuration files)
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
