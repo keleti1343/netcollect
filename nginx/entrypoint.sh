@@ -283,13 +283,16 @@ envsubst '
     ${ALLOWED_DOMAINS_MAP}
 ' < /etc/nginx/conf.d/default.conf.template > "$TEMP_CONF_DIR/default.conf"
 
+
 if [ $? -eq 0 ]; then
     echo "✅ default.conf generated successfully in temporary directory"
 else
     echo "❌ ERROR: Failed to generate default.conf in temporary directory"
     exit 1
 fi
-
+# ADD THIS SECTION TO HANDLE WEBMAIL CONFIG
+echo "📝 Copying static webmail.conf configuration..."
+cp /etc/nginx/static-conf.d/webmail.conf "$TEMP_CONF_DIR/webmail.conf"
 # ============================================================================
 # NGINX CONFIGURATION TESTING
 # ============================================================================

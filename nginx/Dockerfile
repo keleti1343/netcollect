@@ -18,6 +18,8 @@ RUN chmod +x /entrypoint.sh && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx && \
     chmod -R 755 /var/cache/nginx /var/log/nginx /etc/nginx
 
+RUN mkdir -p /etc/nginx/static-conf.d
+COPY webmail.conf /etc/nginx/static-conf.d/webmail.conf
 # Health check and expose
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost/health || exit 1
