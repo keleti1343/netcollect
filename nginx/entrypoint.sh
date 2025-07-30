@@ -137,15 +137,15 @@ echo "🔄 GENERATING CONFIGURATION FILES:"
 echo "----------------------------------------"
 
 # Create temporary directories for nginx configuration
-TEMP_NGINX_DIR="/tmp/nginx"
-TEMP_CONF_DIR="/tmp/nginx/conf.d"
+#TEMP_NGINX_DIR="/tmp/nginx"
+#TEMP_CONF_DIR="/tmp/nginx/conf.d"
 # AFTER:
-#TEMP_NGINX_DIR="/etc/nginx"
-#TEMP_CONF_DIR="/etc/nginx/conf.d"
+TEMP_NGINX_DIR="/etc/nginx"
+TEMP_CONF_DIR="/etc/nginx/conf.d"
 
 echo "📁 Creating temporary directories..."
-mkdir -p "$TEMP_NGINX_DIR"
-mkdir -p "$TEMP_CONF_DIR"
+#mkdir -p "$TEMP_NGINX_DIR"
+#mkdir -p "$TEMP_CONF_DIR"
 
 if [ $? -eq 0 ]; then
     echo "✅ Temporary directories created: $TEMP_NGINX_DIR"
