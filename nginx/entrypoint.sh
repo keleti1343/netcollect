@@ -385,4 +385,4 @@ echo "STARTING NGINX WITH PRODUCTION CONFIG"
 echo "=========================================="
 
 echo "🚀 Starting nginx with default configuration"
-exec nginx -g "daemon off;""
+exec nginx -g "daemon off;"
