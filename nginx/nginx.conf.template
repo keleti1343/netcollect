@@ -11,7 +11,7 @@ events {
 
 
 http {
-    include /tmp/nginx/mime.types;
+    include mime.types;
     default_type application/octet-stream;
 
     # Logging format
@@ -87,5 +87,5 @@ http {
     }
 
     # Include additional configurations
-    include ./nginx/conf.d/default.conf;
+    include conf.d/*.conf;
 }
