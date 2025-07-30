@@ -28,6 +28,9 @@ RUN adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx -g ngi
 # Set proper permissions
 RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx
 RUN chmod -R 755 /var/cache/nginx /var/log/nginx
+# Add these lines before HEALTHCHECK:
+RUN chown -R nginx:nginx /etc/nginx
+RUN chmod -R 755 /etc/nginx
 
 # Health check (static values - Docker doesn't support env vars in HEALTHCHECK)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
