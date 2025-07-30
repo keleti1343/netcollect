@@ -156,7 +156,7 @@ fi
 
 # Copy required nginx files to temporary directory
 echo "📋 Copying required nginx files to temporary directory..."
-cp /etc/nginx/mime.types "$TEMP_NGINX_DIR/"
+#cp /etc/nginx/mime.types "$TEMP_NGINX_DIR/"
 
 if [ $? -eq 0 ]; then
     echo "✅ Required files copied to temporary directory"
@@ -359,4 +359,6 @@ echo "=========================================="
 
 # Start nginx in foreground with temporary configuration
 echo "🚀 Starting nginx with configuration from: $TEMP_NGINX_DIR/nginx.conf"
-exec nginx -c "$TEMP_NGINX_DIR/nginx.conf" -g "daemon off;"
+#exec nginx -c "$TEMP_NGINX_DIR/nginx.conf" -g "daemon off;"
+cp -r "$TEMP_NGINX_DIR"/* /etc/nginx/
+exec nginx -g "daemon off;"
