@@ -147,7 +147,7 @@ TEMP_NGINX_DIR="$TEMP_DIR"
 TEMP_CONF_DIR="$TEMP_DIR/conf.d"
 echo "📁 Creating temporary directories..."
 #mkdir -p "$TEMP_NGINX_DIR"
-#mkdir -p "$TEMP_CONF_DIR"
+mkdir -p "$TEMP_CONF_DIR"
 
 if [ $? -eq 0 ]; then
     echo "✅ Temporary directories created: $TEMP_NGINX_DIR"
@@ -363,6 +363,20 @@ echo "=========================================="
 #echo "🚀 Starting nginx with configuration from: $TEMP_NGINX_DIR/nginx.conf"
 #exec nginx -c "$TEMP_NGINX_DIR/nginx.conf" -g "daemon off;"
 cp -r "$TEMP_NGINX_DIR"/* /etc/nginx/
-rm -rf "$TEMP_DIR"
-echo "🚀 Starting nginx with production configuration"
-exec nginx -g "daemon off;"
+if [ $? -eq 0 ]; then
+    echo "✅ Configuration deployed to /etc/nginx"
+    # Clean up temporary files
+    rm -rf "$TEMP_DIR"
+    echo "🧹 Temporary files cleaned up"
+else
+    echo "❌ ERROR: Failed to deploy configuration"
+    exit 1
+fi
+
+echo ""
+echo "=========================================="
+echo "STARTING NGINX WITH PRODUCTION CONFIG"
+echo "=========================================="
+
+echo "🚀 Starting nginx with default configuration"
+exec nginx -g "daemon off;""
