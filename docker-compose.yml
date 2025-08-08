@@ -302,7 +302,7 @@ services:
       - fortinet-api-1
       - fortinet-api-2
     networks:
-      - backend-network
+      - backend-network:
     ipv4_address: 172.21.0.4
     restart: unless-stopped
     deploy:
