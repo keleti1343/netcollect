@@ -5,10 +5,10 @@
 # configuration changes. Supports scaling, resource limits, and health checks.
 # ============================================================================
 
+
 services:
   # Load Balancer - Dynamic Configuration
   fortinet-nginx:
-    #cpus: '${NGINX_CPU_LIMIT:-2.0}'
     image: nginx:latest
     build: ./nginx
     container_name: fortinet-nginx
@@ -49,7 +49,6 @@ services:
       - NGINX_CLIENT_MAX_BODY_SIZE=${NGINX_CLIENT_MAX_BODY_SIZE:-10M}
       - NGINX_SKIP_TEST=${NGINX_SKIP_TEST:-false}
      
-      
       # Zone sizing configuration (Enhanced Performance)
       - NGINX_API_ZONE_SIZE=${NGINX_API_ZONE_SIZE:-10m}
       - NGINX_WEB_ZONE_SIZE=${NGINX_WEB_ZONE_SIZE:-10m}
@@ -88,7 +87,7 @@ services:
     build: ./fortinet-api
     container_name: fortinet-api-1
     dns:
-      - 172.21.0.10 # Use the backend network DNS for service discovery
+      - 172.21.0.10
     environment:
       # Database and Redis connections
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
@@ -146,7 +145,7 @@ services:
     build: ./fortinet-api
     container_name: fortinet-api-2
     dns:
-      - 172.21.0.10 # Use the backend network DNS for service discovery
+      - 172.21.0.10
     environment:
       # Database and Redis connections
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
@@ -205,7 +204,7 @@ services:
     build: ./fortinet-web
     container_name: fortinet-web-1
     dns:
-      - 172.21.0.10 # Use the backend network DNS for service discovery
+      - 172.21.0.10
     environment:
       # Basic Next.js configuration
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://fortinet-nginx/api}
@@ -361,7 +360,7 @@ services:
       start_period: ${HEALTH_CHECK_START_PERIOD:-60s}
 
   # Redis Cache Service - Dynamic Configuration
-  fortinet-redis:
+  redis:
     build: ./redis
     container_name: fortinet-redis
     dns:
@@ -406,20 +405,20 @@ services:
       - LOAD_TEST_REQUESTS=${LOAD_TEST_REQUESTS:-1000}
       - LOAD_TEST_DURATION=${LOAD_TEST_DURATION:-60}
     depends_on:
-      - nginx
+      - fortinet-nginx
     networks:
       - backend-network
     ipv4_address: 172.21.0.17
     profiles:
       - testing
-    command: ["sleep", "infinity"]  # Keep container running for manual testing
+    command: ["sleep", "infinity"]
 
   # Database Management Service - Dynamic Configuration
   fortinet-db-manage:
     build: ./postgres-db
     container_name: fortinet-db-manager
     dns:
-      - 172.21.0.10:
+      - 172.21.0.10
     ports:
       - "${DB_MANAGER_PORT:-5433}:5432"
     environment:
@@ -439,23 +438,17 @@ services:
       - postgres-db
     profiles:
       - management
-    command: ["sleep", "infinity"]  # Keep container running for manual operations
+    command: ["sleep", "infinity"]
 
 networks:
-  backend-network:
+  frontend-network:
     driver: bridge
-    name: frontend-network
-    labels:
-      com.docker.compose.network: frontend-network  # Add this label
     ipam:
       config:
         - subnet: 172.20.0.0/16
           gateway: 172.20.0.1
-backend-network:
+  backend-network:
     driver: bridge
-    name: fortinet-backend
-    labels:
-      com.docker.compose.network: backend-network  # Add this label
     ipam:
       config:
         - subnet: 172.21.0.0/16
