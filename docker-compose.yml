@@ -124,7 +124,7 @@ services:
       - redis
     networks:
        backend-network:
-    ipv4_address: 172.21.0.7
+        ipv4_address: 172.21.0.7
     restart: unless-stopped
     deploy:
       resources:
