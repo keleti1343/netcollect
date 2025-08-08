@@ -433,7 +433,7 @@ services:
       - ./postgres-db/exports:/exports
     networks:
       - backend-network:
-        ipv4_address: 172.21.0.18
+         ipv4_address: 172.21.0.18
     depends_on:
       - postgres-db
     profiles:
