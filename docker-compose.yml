@@ -243,7 +243,7 @@ services:
       - fortinet-api-2
     networks:
     - backend-network:
-    ipv4_address: 172.21.0.3
+      ipv4_address: 172.21.0.3
     restart: unless-stopped
     deploy:
       resources:
@@ -303,7 +303,7 @@ services:
       - fortinet-api-2
     networks:
       - backend-network:
-    ipv4_address: 172.21.0.4
+        ipv4_address: 172.21.0.4
     restart: unless-stopped
     deploy:
       resources:
