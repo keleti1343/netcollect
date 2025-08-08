@@ -182,7 +182,7 @@ services:
       - redis
     networks:
       - backend-network:
-    ipv4_address: 172.21.0.8
+          ipv4_address: 172.21.0.8
     restart: unless-stopped
     deploy:
       resources:
@@ -243,7 +243,7 @@ services:
       - fortinet-api-2
     networks:
     - backend-network:
-      ipv4_address: 172.21.0.3
+       ipv4_address: 172.21.0.3
     restart: unless-stopped
     deploy:
       resources:
@@ -342,7 +342,7 @@ services:
       - ./postgres-db/exports:/exports
     networks:
       - backend-network:
-    ipv4_address: 172.21.0.11
+          ipv4_address: 172.21.0.11
     restart: unless-stopped
     deploy:
       resources:
@@ -376,7 +376,7 @@ services:
       - redis-data:/data
     networks:
       - backend-network:
-    ipv4_address: 172.21.0.15
+          ipv4_address: 172.21.0.15
     restart: unless-stopped
     deploy:
       resources:
@@ -407,8 +407,8 @@ services:
     depends_on:
       - fortinet-nginx
     networks:
-      - backend-network
-    ipv4_address: 172.21.0.17
+      - backend-network:
+          ipv4_address: 172.21.0.17
     profiles:
       - testing
     command: ["sleep", "infinity"]
@@ -433,7 +433,7 @@ services:
       - ./postgres-db/exports:/exports
     networks:
       - backend-network:
-    ipv4_address: 172.21.0.18
+        ipv4_address: 172.21.0.18
     depends_on:
       - postgres-db
     profiles:
