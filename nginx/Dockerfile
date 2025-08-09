@@ -2,6 +2,7 @@ ARG ALPINE_MIRROR=dl-cdn.alpinelinux.org
 ARG ALPINE_VERSION=v3.20
 
 FROM nginx:alpine
+USER root
 # First configure DNS temporarily
 RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
     echo "nameserver 1.1.1.1" >> /etc/resolv.conf
