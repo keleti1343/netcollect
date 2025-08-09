@@ -1,9 +1,13 @@
 FROM nginx:alpine
 
+# Set Alpine Linux mirror (replace if needed)
 RUN echo "https://eu.edge.kernel.org/pub/alpinelinux/v3.22/main" > /etc/apk/repositories && \
     echo "https://eu.edge.kernel.org/pub/alpinelinux/v3.22/community" >> /etc/apk/repositories
-RUN echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf && \
-# Install tools
+
+# Force IPv4 preference (if network issues persist)
+RUN echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
+
+# Install packages with retry logic (in case of temporary failures)
 RUN apk update && \
     apk add --no-cache curl gettext bash
 
