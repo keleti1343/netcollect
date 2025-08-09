@@ -4,7 +4,7 @@ ARG ALPINE_VERSION=v3.20
 FROM nginx:alpine
 
 # Create packages directory
-WORKDIR /packages
+#WORKDIR /packages
 
 # Copy each package individually with verification
 COPY bash-5.2.37-r0.apk .
