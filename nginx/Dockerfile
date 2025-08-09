@@ -31,9 +31,14 @@ RUN chmod +x /entrypoint.sh && \
     chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx && \
     chmod -R 755 /var/cache/nginx /var/log/nginx /etc/nginx
 
-COPY webmail.conf /etc/nginx/sites-available/webmail.conf
-RUN  rm /etc/nginx/sites-enabled/default && \
-     ln -s /etc/nginx/sites-available/webmail.conf /etc/nginx/sites-enabled/
+#COPY webmail.conf /etc/nginx/sites-available/webmail.conf
+#RUN  rm /etc/nginx/sites-enabled/default && \
+#     ln -s /etc/nginx/sites-available/webmail.conf /etc/nginx/sites-enabled/
+# Remove default configuration
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy your custom configuration
+COPY webmail.conf /etc/nginx/conf.d/webmail.conf
      
 # Health check and expose
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

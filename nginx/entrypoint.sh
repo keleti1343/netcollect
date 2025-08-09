@@ -17,6 +17,11 @@ echo "Container: nginx"
 echo "Purpose: Generate runtime configuration from environment variables"
 echo ""
 
+# Standard Nginx directories in Alpine Linux
+NGINX_CONF_DIR="/etc/nginx"
+NGINX_CONF_D_DIR="/etc/nginx/conf.d"
+NGINX_TEMPLATES_DIR="/etc/nginx/templates"
+
 # ============================================================================
 # CONFIGURATION VALIDATION AND LOGGING
 # ============================================================================
@@ -86,7 +91,6 @@ validate_number() {
     echo "✅ $name: $value (valid)"
 }
 
-# Validate rate limiting values
 # Validate allowed domains
 if [ -z "${ALLOWED_DOMAINS}" ]; then
     echo "❌ ERROR: ALLOWED_DOMAINS must be set"
@@ -130,42 +134,14 @@ echo "✅ All configuration values validated successfully!"
 echo ""
 
 # ============================================================================
-# TEMPLATE PROCESSING WITH TEMPORARY DIRECTORY
+# TEMPLATE PROCESSING
 # ============================================================================
 
 echo "🔄 GENERATING CONFIGURATION FILES:"
 echo "----------------------------------------"
 
-# Create temporary directories for nginx configuration
-#TEMP_NGINX_DIR="/tmp/nginx"
-#TEMP_CONF_DIR="/tmp/nginx/conf.d"
-# AFTER:
-TEMP_DIR=$(mktemp -d)
-#TEMP_NGINX_DIR="/etc/nginx"
-#TEMP_CONF_DIR="/etc/nginx/conf.d"
-TEMP_NGINX_DIR="$TEMP_DIR"
-TEMP_CONF_DIR="$TEMP_DIR/conf.d"
-echo "📁 Creating temporary directories..."
-#mkdir -p "$TEMP_NGINX_DIR"
-mkdir -p "$TEMP_CONF_DIR"
-
-if [ $? -eq 0 ]; then
-    echo "✅ Temporary directories created: $TEMP_NGINX_DIR"
-else
-    echo "❌ ERROR: Failed to create temporary directories"
-    exit 1
-fi
-
-# Copy required nginx files to temporary directory
-echo "📋 Copying required nginx files to temporary directory..."
-cp /etc/nginx/mime.types "$TEMP_NGINX_DIR/"
-
-if [ $? -eq 0 ]; then
-    echo "✅ Required files copied to temporary directory"
-else
-    echo "❌ ERROR: Failed to copy required files"
-    exit 1
-fi
+# Create conf.d directory if it doesn't exist
+mkdir -p "$NGINX_CONF_D_DIR"
 
 # Set default values for all environment variables
 export NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-auto}
@@ -184,6 +160,7 @@ export NGINX_HEALTH_BURST=${NGINX_HEALTH_BURST:-10}
 export NGINX_API_DELAY=${NGINX_API_DELAY:-5}
 export NGINX_WEB_DELAY=${NGINX_WEB_DELAY:-10}
 export ALLOWED_DOMAINS=${ALLOWED_DOMAINS:-demo.projectsonline.xyz}
+
 # Convert ALLOWED_DOMAINS to map format
 ALLOWED_DOMAINS_MAP=$(echo "$ALLOWED_DOMAINS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/.*/"~^&$" 1;/' | tr '\n' ' ')
 export ALLOWED_DOMAINS_MAP
@@ -218,8 +195,8 @@ echo "  Web Rate: ${NGINX_WEB_RATE_LIMIT}r/m → ${NGINX_WEB_RATE_LIMIT_NUMERIC}
 echo "  Health Rate: ${NGINX_HEALTH_RATE_LIMIT}r/m → ${NGINX_HEALTH_RATE_LIMIT_NUMERIC}r/s"
 echo ""
 
-# Generate main nginx.conf from template in temporary directory
-echo "📝 Generating $TEMP_NGINX_DIR/nginx.conf from template..."
+# Generate main nginx.conf from template
+echo "📝 Generating $NGINX_CONF_DIR/nginx.conf from template..."
 envsubst '
     ${NGINX_WORKER_PROCESSES}
     ${NGINX_WORKER_CONNECTIONS}
@@ -247,18 +224,17 @@ envsubst '
     ${NGINX_SSL_SESSION_CACHE}
     ${NGINX_SSL_SESSION_TIMEOUT}
     ${NGINX_SSL_PREFER_SERVER_CIPHERS}
-  
-' < /etc/nginx/nginx.conf.template > "$TEMP_NGINX_DIR/nginx.conf"
+' < "$NGINX_TEMPLATES_DIR/nginx.conf.template" > "$NGINX_CONF_DIR/nginx.conf"
 
 if [ $? -eq 0 ]; then
-    echo "✅ nginx.conf generated successfully in temporary directory"
+    echo "✅ nginx.conf generated successfully"
 else
-    echo "❌ ERROR: Failed to generate nginx.conf in temporary directory"
+    echo "❌ ERROR: Failed to generate nginx.conf"
     exit 1
 fi
 
-# Generate default.conf from template in temporary directory
-echo "📝 Generating $TEMP_CONF_DIR/default.conf from template..."
+# Generate default.conf from template
+echo "📝 Generating $NGINX_CONF_D_DIR/default.conf from template..."
 envsubst '
     ${NGINX_API_RATE_LIMIT}
     ${NGINX_WEB_RATE_LIMIT}
@@ -281,18 +257,19 @@ envsubst '
     ${NGINX_HOST}
     ${ALLOWED_DOMAINS}
     ${ALLOWED_DOMAINS_MAP}
-' < /etc/nginx/conf.d/default.conf.template > "$TEMP_CONF_DIR/default.conf"
-
+' < "$NGINX_TEMPLATES_DIR/default.conf.template" > "$NGINX_CONF_D_DIR/default.conf"
 
 if [ $? -eq 0 ]; then
-    echo "✅ default.conf generated successfully in temporary directory"
+    echo "✅ default.conf generated successfully"
 else
-    echo "❌ ERROR: Failed to generate default.conf in temporary directory"
+    echo "❌ ERROR: Failed to generate default.conf"
     exit 1
 fi
-# ADD THIS SECTION TO HANDLE WEBMAIL CONFIG
+
+# Copy static webmail configuration
 echo "📝 Copying static webmail.conf configuration..."
-cp /etc/nginx/static-conf.d/webmail.conf "$TEMP_CONF_DIR/webmail.conf"
+cp "$NGINX_TEMPLATES_DIR/webmail.conf" "$NGINX_CONF_D_DIR/webmail.conf"
+
 # ============================================================================
 # NGINX CONFIGURATION TESTING
 # ============================================================================
@@ -301,23 +278,24 @@ echo ""
 echo "🧪 TESTING NGINX CONFIGURATION:"
 echo "----------------------------------------"
 
-# Always show the generated configuration for debugging
+# Show generated configuration for debugging
 echo "📋 Generated nginx.conf content (lines 70-85):"
 echo "----------------------------------------"
-sed -n '70,85p' "$TEMP_NGINX_DIR/nginx.conf" | nl -v70
+sed -n '70,85p' "$NGINX_CONF_DIR/nginx.conf" | nl -v70
 echo ""
 
 # Show current directory and file structure for debugging
 echo "🔍 Current working directory: $(pwd)"
-echo "📂 Contents of $TEMP_NGINX_DIR:"
-ls -lR "$TEMP_NGINX_DIR" | head -20
-
+echo "📂 Contents of $NGINX_CONF_DIR:"
+ls -l "$NGINX_CONF_DIR"
+echo "📂 Contents of $NGINX_CONF_D_DIR:"
+ls -l "$NGINX_CONF_D_DIR"
 
 # Test nginx configuration syntax (skip in development mode)
 if [ "${NGINX_SKIP_TEST:-false}" = "true" ]; then
     echo "⚠️  Skipping nginx configuration test (NGINX_SKIP_TEST=true)"
 else
-    nginx -t -c "$TEMP_NGINX_DIR/nginx.conf"
+    nginx -t
     
     if [ $? -eq 0 ]; then
         echo "✅ Nginx configuration test passed!"
@@ -327,15 +305,15 @@ else
         echo ""
         echo "📋 Generated nginx.conf content (lines 70-85):"
         echo "----------------------------------------"
-        sed -n '70,85p' "$TEMP_NGINX_DIR/nginx.conf" | nl -v70
+        sed -n '70,85p' "$NGINX_CONF_DIR/nginx.conf" | nl -v70
         echo ""
         echo "📋 Full Generated nginx.conf content:"
         echo "----------------------------------------"
-        cat "$TEMP_NGINX_DIR/nginx.conf"
+        cat "$NGINX_CONF_DIR/nginx.conf"
         echo ""
         echo "📋 Generated default.conf content:"
         echo "----------------------------------------"
-        cat "$TEMP_CONF_DIR/default.conf"
+        cat "$NGINX_CONF_D_DIR/default.conf"
         exit 1
     fi
 fi
@@ -368,24 +346,6 @@ echo "=========================================="
 echo "STARTING NGINX..."
 echo "=========================================="
 
-# Start nginx in foreground with temporary configuration
-#echo "🚀 Starting nginx with configuration from: $TEMP_NGINX_DIR/nginx.conf"
-#exec nginx -c "$TEMP_NGINX_DIR/nginx.conf" -g "daemon off;"
-cp -r "$TEMP_NGINX_DIR"/* /etc/nginx/
-if [ $? -eq 0 ]; then
-    echo "✅ Configuration deployed to /etc/nginx"
-    # Clean up temporary files
-    rm -rf "$TEMP_DIR"
-    echo "🧹 Temporary files cleaned up"
-else
-    echo "❌ ERROR: Failed to deploy configuration"
-    exit 1
-fi
-
-echo ""
-echo "=========================================="
-echo "STARTING NGINX WITH PRODUCTION CONFIG"
-echo "=========================================="
-
-echo "🚀 Starting nginx with default configuration"
+# Start nginx in foreground
+echo "🚀 Starting nginx with generated configuration"
 exec nginx -g "daemon off;"
