@@ -3,20 +3,15 @@ ARG ALPINE_VERSION=v3.20
 
 FROM nginx:alpine
 
-# Solution 1: Use IP addresses instead of hostnames
-RUN echo "https://151.101.110.133/pub/alpinelinux/v3.20/main" > /etc/apk/repositories && \
-    echo "https://151.101.110.133/pub/alpinelinux/v3.20/community" >> /etc/apk/repositories
+# Manual package installation
+COPY *.apk /tmp/
+RUN apk add --allow-untrusted --no-cache /tmp/*.apk && \
+    rm -f /tmp/*.apk
 
-# OR Solution 2: Use host networking during build
-# RUN echo "https://${ALPINE_MIRROR}/${ALPINE_VERSION}/main" > /etc/apk/repositories && \
-#     echo "https://${ALPINE_MIRROR}/${ALPINE_VERSION}/community" >> /etc/apk/repositories
-
-# Install with retries
-RUN for i in 1 2 3; do \
-      apk update && \
-      apk add --no-cache tar grep curl bash gettext && \
-      break || sleep 5; \
-    done
+# Verify
+RUN bash --version && \
+    curl --version && \
+    gettext --version
 
 
 
