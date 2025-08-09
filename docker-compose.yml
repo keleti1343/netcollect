@@ -449,12 +449,16 @@ networks:
       config:
         - subnet: 172.20.0.0/16
           gateway: 172.20.0.1
+          aux_addresses:
+            dns: 8.8.8.8
   backend-network:
     driver: bridge
     ipam:
       config:
         - subnet: 172.21.0.0/16
           gateway: 172.21.0.1
+          aux_addresses:
+            dns: 8.8.8.8
 
 volumes:
   postgres-data:
