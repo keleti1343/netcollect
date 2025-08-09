@@ -5,7 +5,7 @@ FROM nginx:alpine
 
 # Create packages directory
 #WORKDIR /packages
-
+USER root
 # Copy each package individually with verification
 COPY bash-5.2.37-r0.apk .
 RUN [ -f bash-5.2.37-r0.apk ] || (echo "Missing bash package" && exit 1)
