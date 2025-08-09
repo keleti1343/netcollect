@@ -1,46 +1,24 @@
-ARG ALPINE_MIRROR=dl-cdn.alpinelinux.org
+ARG ALPINE_MIRROR=mirror.math.princeton.edu/pub/alpinelinux
 ARG ALPINE_VERSION=v3.20
 
 FROM nginx:alpine
-USER root
+
+# Solution 1: Use IP addresses instead of hostnames
+RUN echo "https://151.101.110.133/pub/alpinelinux/v3.20/main" > /etc/apk/repositories && \
+    echo "https://151.101.110.133/pub/alpinelinux/v3.20/community" >> /etc/apk/repositories
+
+# OR Solution 2: Use host networking during build
+# RUN echo "https://${ALPINE_MIRROR}/${ALPINE_VERSION}/main" > /etc/apk/repositories && \
+#     echo "https://${ALPINE_MIRROR}/${ALPINE_VERSION}/community" >> /etc/apk/repositories
+
+# Install with retries
+RUN for i in 1 2 3; do \
+      apk update && \
+      apk add --no-cache tar grep curl bash gettext && \
+      break || sleep 5; \
+    done
 
 
-RUN echo "https://${ALPINE_MIRROR}/${ALPINE_VERSION}/main" > /etc/apk/repositories && \
-    echo "https://${ALPINE_MIRROR}/${ALPINE_VERSION}/community" >> /etc/apk/repositories
-
-RUN apk update && apk add --no-cache \
-    tar \
-    grep \
-    curl \
-    bash \
-    gettext
-
-# Function to manually download and install packages
-RUN echo -e '\
-download_and_install() {\n\
-  pkg="$1"\n\
-  echo "Fetching $pkg from $ALPINE_MIRROR..."\n\
-  wget -q -O /tmp/APKINDEX.tar.gz "https://${ALPINE_MIRROR}/alpine/${ALPINE_VERSION}/main/x86_64/APKINDEX.tar.gz" || \\\n\
-  wget -q -O /tmp/APKINDEX.tar.gz "https://${ALPINE_MIRROR}/pub/alpinelinux/${ALPINE_VERSION}/main/x86_64/APKINDEX.tar.gz"\n\
-  \n\
-  pkg_info=$(tar -zxf /tmp/APKINDEX.tar.gz -O | grep -A 1 "^P:${pkg}$")\n\
-  pkg_name=$(echo "$pkg_info" | grep "^P:" | cut -d: -f2)\n\
-  pkg_version=$(echo "$pkg_info" | grep "^V:" | cut -d: -f2)\n\
-  \n\
-  wget -q -O "/tmp/${pkg}.apk" \\\n\
-    "https://${ALPINE_MIRROR}/alpine/${ALPINE_VERSION}/main/x86_64/${pkg_name}-${pkg_version}.apk" || \\\n\
-  wget -q -O "/tmp/${pkg}.apk" \\\n\
-    "https://${ALPINE_MIRROR}/pub/alpinelinux/${ALPINE_VERSION}/main/x86_64/${pkg_name}-${pkg_version}.apk"\n\
-  \n\
-  apk add --allow-untrusted --no-cache "/tmp/${pkg}.apk"\n\
-  rm "/tmp/${pkg}.apk" /tmp/APKINDEX.tar.gz\n\
-}\n' > /usr/local/bin/download_pkg && \
-    chmod +x /usr/local/bin/download_pkg
-
-# Install required packages using our function
-RUN download_pkg curl && \
-    download_pkg gettext && \
-    download_pkg bash
 
 # Remove only default server config
 RUN rm /etc/nginx/conf.d/default.conf
