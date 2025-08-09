@@ -2,6 +2,7 @@ FROM nginx:alpine
 
 RUN echo "https://eu.edge.kernel.org/pub/alpinelinux/v3.22/main" > /etc/apk/repositories && \
     echo "https://eu.edge.kernel.org/pub/alpinelinux/v3.22/community" >> /etc/apk/repositories
+RUN echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf && \
 # Install tools
 RUN apk update && \
     apk add --no-cache curl gettext bash
