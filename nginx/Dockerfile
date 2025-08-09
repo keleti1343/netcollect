@@ -1,5 +1,7 @@
 FROM nginx:alpine
 
+RUN echo "https://mirror.math.princeton.edu/pub/alpinelinux/v3.22/main" > /etc/apk/repositories && \
+    echo "https://mirror.math.princeton.edu/pub/alpinelinux/v3.22/community" >> /etc/apk/repositories
 # Install tools
 RUN apk update && \
     apk add --no-cache curl gettext bash
