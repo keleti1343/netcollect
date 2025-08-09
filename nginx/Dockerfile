@@ -3,15 +3,26 @@ ARG ALPINE_VERSION=v3.20
 
 FROM nginx:alpine
 
-# Manual package installation
-# Copy all downloaded packages
-COPY *.apk /tmp/
+# 1. Explicitly list all .apk files (replace with your exact filenames)
+COPY bash-5.2.37-r0.apk \
+     curl-8.14.1-r1.apk \
+     gettext-0.24.1-r0.apk \
+     tar-1.35-r3.apk  \
+     grep-3.12-r0.apk \
+     /tmp/
 
-# Disable all repositories during installation
-RUN mv /etc/apk/repositories /etc/apk/repositories.bak && \
+# 2. Verify files exist before installation
+RUN ls -la /tmp/*.apk && \
+    echo "Files present:" && \
+    find /tmp -name "*.apk" -exec echo {} \; && \
+    echo "Disabling repositories..." && \
+    mv /etc/apk/repositories /etc/apk/repositories.bak && \
     touch /etc/apk/repositories && \
-    apk add --allow-untrusted --no-cache /tmp/*.apk && \
+    echo "Installing packages..." && \
+    apk add --allow-untrusted --no-cache $(find /tmp -name "*.apk" -printf "/tmp/%f ") && \
+    echo "Restoring repositories..." && \
     mv /etc/apk/repositories.bak /etc/apk/repositories && \
+    echo "Cleaning up..." && \
     rm -f /tmp/*.apk
 
 
