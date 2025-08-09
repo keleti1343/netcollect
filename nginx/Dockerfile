@@ -10,8 +10,9 @@ RUN echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
 # Install packages with retry logic (in case of temporary failures)
 # Install with retries
 RUN for i in 1 2 3; do \
-      apk update && \
-      apk add --no-cache curl gettext bash && \
+    wget https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/curl-*.apk && \
+        wget https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/bash-*.apk && \
+        apk add --allow-untrusted *.apk && \
       break || sleep 5; \
     done
 
