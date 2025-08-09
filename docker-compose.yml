@@ -9,11 +9,16 @@
 services:
   # Load Balancer - Dynamic Configuration
   fortinet-nginx:
-    image: nginx:latest
-    build: ./nginx
+    build: 
+      context: ./nginx
+      args:
+        - ALPINE_MIRROR=mirror.math.princeton.edu/pub/alpinelinux
+        - ALPINE_VERSION=v3.20
+    network: host 
     container_name: fortinet-nginx
     dns:
       - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "0.0.0.0:80:80"
       - "0.0.0.0:443:443"

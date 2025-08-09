@@ -1,15 +1,17 @@
+ARG ALPINE_MIRROR=dl-cdn.alpinelinux.org
+ARG ALPINE_VERSION=v3.20
+
 FROM nginx:alpine
 
-# Allow mirror URL to be passed as build argument (default: dl-cdn.alpinelinux.org)
-ARG ALPINE_MIRROR=dl-cdn.alpinelinux.org
-ENV ALPINE_MIRROR=$ALPINE_MIRROR
-ENV ALPINE_VERSION=v3.22
+RUN echo "https://${ALPINE_MIRROR}/${ALPINE_VERSION}/main" > /etc/apk/repositories && \
+    echo "https://${ALPINE_MIRROR}/${ALPINE_VERSION}/community" >> /etc/apk/repositories
 
-# Install minimal tools needed for package fetching
-#RUN apk add --no-cache tar grep
- RUN wget https://eu.edge.kernel.org/alpine/v3.22/main/x86_64/tar-1.35-r3.apk  && \
-	 wget https://eu.edge.kernel.org/alpine/v3.22/main/x86_64/grep-3.12-r0.apk && \
-	 apk add --allow-untrusted *.apk
+RUN apk update && apk add --no-cache \
+    tar \
+    grep \
+    curl \
+    bash \
+    gettext
 
 # Function to manually download and install packages
 RUN echo -e '\
