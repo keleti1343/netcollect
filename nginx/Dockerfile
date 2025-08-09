@@ -4,14 +4,15 @@ ARG ALPINE_VERSION=v3.20
 FROM nginx:alpine
 
 # Manual package installation
+# Copy all downloaded packages
 COPY *.apk /tmp/
-RUN apk add --allow-untrusted --no-cache /tmp/*.apk && \
-    rm -f /tmp/*.apk
 
-# Verify
-RUN bash --version && \
-    curl --version && \
-    gettext --version
+# Disable all repositories during installation
+RUN mv /etc/apk/repositories /etc/apk/repositories.bak && \
+    touch /etc/apk/repositories && \
+    apk add --allow-untrusted --no-cache /tmp/*.apk && \
+    mv /etc/apk/repositories.bak /etc/apk/repositories && \
+    rm -f /tmp/*.apk
 
 
 
