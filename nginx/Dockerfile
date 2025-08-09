@@ -1,7 +1,9 @@
 FROM nginx:alpine
 
 # Install tools
-RUN apk add --no-cache curl gettext bash
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache curl gettext bash
 
 # Remove only default server config
 RUN rm /etc/nginx/conf.d/default.conf
