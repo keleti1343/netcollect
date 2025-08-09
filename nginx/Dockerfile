@@ -1,20 +1,39 @@
 FROM nginx:alpine
 
-# Set Alpine Linux mirror (replace if needed)
-RUN echo "https://eu.edge.kernel.org/pub/alpinelinux/v3.22/main" > /etc/apk/repositories && \
-    echo "https://eu.edge.kernel.org/pub/alpinelinux/v3.22/community" >> /etc/apk/repositories
+# Allow mirror URL to be passed as build argument (default: dl-cdn.alpinelinux.org)
+ARG ALPINE_MIRROR=dl-cdn.alpinelinux.org
+ENV ALPINE_MIRROR=$ALPINE_MIRROR
+ENV ALPINE_VERSION=v3.22
 
-# Force IPv4 preference (if network issues persist)
-RUN echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
+# Install minimal tools needed for package fetching
+RUN apk add --no-cache tar grep
 
-# Install packages with retry logic (in case of temporary failures)
-# Install with retries
-RUN for i in 1 2 3; do \
-    wget https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/curl-*.apk && \
-        wget https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/bash-*.apk && \
-        apk add --allow-untrusted *.apk && \
-      break || sleep 5; \
-    done
+# Function to manually download and install packages
+RUN echo -e '\
+download_and_install() {\n\
+  pkg="$1"\n\
+  echo "Fetching $pkg from $ALPINE_MIRROR..."\n\
+  wget -q -O /tmp/APKINDEX.tar.gz "https://${ALPINE_MIRROR}/alpine/${ALPINE_VERSION}/main/x86_64/APKINDEX.tar.gz" || \\\n\
+  wget -q -O /tmp/APKINDEX.tar.gz "https://${ALPINE_MIRROR}/pub/alpinelinux/${ALPINE_VERSION}/main/x86_64/APKINDEX.tar.gz"\n\
+  \n\
+  pkg_info=$(tar -zxf /tmp/APKINDEX.tar.gz -O | grep -A 1 "^P:${pkg}$")\n\
+  pkg_name=$(echo "$pkg_info" | grep "^P:" | cut -d: -f2)\n\
+  pkg_version=$(echo "$pkg_info" | grep "^V:" | cut -d: -f2)\n\
+  \n\
+  wget -q -O "/tmp/${pkg}.apk" \\\n\
+    "https://${ALPINE_MIRROR}/alpine/${ALPINE_VERSION}/main/x86_64/${pkg_name}-${pkg_version}.apk" || \\\n\
+  wget -q -O "/tmp/${pkg}.apk" \\\n\
+    "https://${ALPINE_MIRROR}/pub/alpinelinux/${ALPINE_VERSION}/main/x86_64/${pkg_name}-${pkg_version}.apk"\n\
+  \n\
+  apk add --allow-untrusted --no-cache "/tmp/${pkg}.apk"\n\
+  rm "/tmp/${pkg}.apk" /tmp/APKINDEX.tar.gz\n\
+}\n' > /usr/local/bin/download_pkg && \
+    chmod +x /usr/local/bin/download_pkg
+
+# Install required packages using our function
+RUN download_pkg curl && \
+    download_pkg gettext && \
+    download_pkg bash
 
 # Remove only default server config
 RUN rm /etc/nginx/conf.d/default.conf
