@@ -77,6 +77,9 @@ services:
 
   # Always include testloader in development
   testloader:
+    build:
+      context: ./testloader
+      dockerfile: Dockerfile
     profiles: []  # Remove testing profile to always include in development
     volumes:
       - ./testloader:/app
