@@ -8,8 +8,12 @@ RUN echo "https://eu.edge.kernel.org/pub/alpinelinux/v3.22/main" > /etc/apk/repo
 RUN echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
 
 # Install packages with retry logic (in case of temporary failures)
-RUN apk update && \
-    apk add curl gettext bash
+# Install with retries
+RUN for i in 1 2 3; do \
+      apk update && \
+      apk add --no-cache curl gettext bash && \
+      break || sleep 5; \
+    done
 
 # Remove only default server config
 RUN rm /etc/nginx/conf.d/default.conf
