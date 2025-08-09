@@ -11,6 +11,7 @@ services:
   fortinet-nginx:
     build: 
       context: ./nginx
+      networks: host
       args:
         - ALPINE_MIRROR=mirror.math.princeton.edu/pub/alpinelinux
         - ALPINE_VERSION=v3.20
