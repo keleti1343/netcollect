@@ -14,7 +14,7 @@ services:
       args:
         - ALPINE_MIRROR=mirror.math.princeton.edu/pub/alpinelinux
         - ALPINE_VERSION=v3.20
-    network: host 
+    
     container_name: fortinet-nginx
     dns:
       - 8.8.8.8
