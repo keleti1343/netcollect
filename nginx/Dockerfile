@@ -6,7 +6,10 @@ ENV ALPINE_MIRROR=$ALPINE_MIRROR
 ENV ALPINE_VERSION=v3.22
 
 # Install minimal tools needed for package fetching
-RUN apk add --no-cache tar grep
+#RUN apk add --no-cache tar grep
+ RUN wget https://eu.edge.kernel.org/alpine/v3.22/main/x86_64/tar-1.35-r3.apk  && \
+	 wget https://eu.edge.kernel.org/alpine/v3.22/main/x86_64/grep-3.12-r0.apk && \
+	 apk add --allow-untrusted *.apk
 
 # Function to manually download and install packages
 RUN echo -e '\
