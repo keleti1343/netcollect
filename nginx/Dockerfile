@@ -9,7 +9,7 @@ RUN echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
 
 # Install packages with retry logic (in case of temporary failures)
 RUN apk update && \
-    apk add --no-cache curl gettext bash
+    apk add curl gettext bash
 
 # Remove only default server config
 RUN rm /etc/nginx/conf.d/default.conf
