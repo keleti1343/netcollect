@@ -2,7 +2,6 @@ FROM nginx:alpine
 
 # Install tools
 RUN apk update && \
-    apk upgrade && \
     apk add --no-cache curl gettext bash
 
 # Remove only default server config
