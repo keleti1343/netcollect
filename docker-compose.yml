@@ -12,6 +12,8 @@ services:
     image: nginx:latest
     build: ./nginx
     container_name: fortinet-nginx
+    dns:
+      - 8.8.8.8
     ports:
       - "0.0.0.0:80:80"
       - "0.0.0.0:443:443"
