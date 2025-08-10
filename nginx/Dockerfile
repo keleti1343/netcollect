@@ -30,10 +30,10 @@ RUN bash --version && \
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy files
-COPY nginx.conf.template /etc/nginx/nginx.conf.template
-COPY conf.d/default.conf.template /etc/nginx/conf.d/default.conf.template
-COPY rate-limit-error.html /usr/share/nginx/html/rate-limit-error.html
-COPY entrypoint.sh /entrypoint.sh
+COPY  nginx/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY  nginx/conf.d/default.conf.template /etc/nginx/conf.d/default.conf.template
+COPY  nginx/rate-limit-error.html /usr/share/nginx/html/rate-limit-error.html
+COPY  nginx/entrypoint.sh /entrypoint.sh
 
 # Set permissions
 RUN chmod +x /entrypoint.sh && \
@@ -48,7 +48,7 @@ RUN chmod +x /entrypoint.sh && \
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy your custom configuration
-COPY webmail.conf /etc/nginx/conf.d/webmail.conf
+COPY  nginx/webmail.conf /etc/nginx/conf.d/webmail.conf
      
 # Health check and expose
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
