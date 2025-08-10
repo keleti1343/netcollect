@@ -12,8 +12,6 @@ services:
     build: 
       context: .
       dockerfile: nginx/Dockerfile
-    volumes:
-      - ./alpine-packages:/packages:ro
     container_name: fortinet-nginx
     dns:
       - 8.8.8.8
@@ -30,6 +28,7 @@ services:
       - frontend-network
       - backend-network
     volumes:
+      - ./alpine-packages:/packages:ro
       - nginx-logs:/var/log/nginx
       - ./nginx/cert:/etc/letsencrypt
       - ./nginx/conf.d:/etc/nginx/conf.d
