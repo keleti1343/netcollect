@@ -3,31 +3,25 @@ ARG ALPINE_VERSION=v3.20
 
 FROM nginx:alpine
 
-# Create packages directory
-#WORKDIR /packages
-USER root
-# Copy each package individually with verification
-COPY bash-5.2.37-r0.apk .
-RUN [ -f bash-5.2.37-r0.apk ] || (echo "Missing bash package" && exit 1)
+FROM nginx:alpine
 
-COPY curl-8.14.1-r1.apk .
-RUN [ -f curl-8.14.1-r1.apk ] || (echo "Missing curl package" && exit 1)
+# Copy all packages from the build context
+COPY alpine-packages/*.apk /tmp/
 
-COPY gettext-0.24.1-r0.apk .
-RUN [ -f gettext-0.24.1-r0.apk ] || (echo "Missing gettext package" && exit 1)
+# Verify files were copied
+RUN ls -la /tmp/*.apk
 
-COPY tar-1.35-r3.apk .
-RUN [ -f tar-1.35-r3.apk ] || (echo "Missing tar package" && exit 1)
-
-COPY grep-3.12-r0.apk .
-RUN [ -f grep-3.12-r0.apk ] || (echo "Missing grep package" && exit 1)
-
-# Install all packages in offline mode
+# Install packages in offline mode
 RUN mv /etc/apk/repositories /etc/apk/repositories.bak && \
     touch /etc/apk/repositories && \
-    apk add --allow-untrusted --no-cache /packages/*.apk && \
+    apk add --allow-untrusted --no-cache /tmp/*.apk && \
     mv /etc/apk/repositories.bak /etc/apk/repositories && \
-    rm -rf /packages
+    rm -f /tmp/*.apk
+
+# Verify installations
+RUN bash --version && \
+    curl --version && \
+    gettext --version
 
 
 

@@ -10,11 +10,10 @@ services:
   # Load Balancer - Dynamic Configuration
   fortinet-nginx:
     build: 
-      context: ./nginx
-      args:
-        - ALPINE_MIRROR=mirror.math.princeton.edu/pub/alpinelinux
-        - ALPINE_VERSION=v3.20
-    
+      context: .
+      dockerfile: nginx/Dockerfile
+    volumes:
+      - ./alpine-packages:/packages:ro
     container_name: fortinet-nginx
     dns:
       - 8.8.8.8
