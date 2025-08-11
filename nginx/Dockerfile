@@ -2,21 +2,15 @@ ARG ALPINE_MIRROR=mirror.math.princeton.edu/pub/alpinelinux
 ARG ALPINE_VERSION=v3.20
 
 FROM nginx:alpine
-
-FROM nginx:alpine
-
-# Copy all packages from the build context
-COPY alpine-packages/*.apk /tmp/
-
-# Verify files were copied
-RUN ls -la /tmp/*.apk
-
-# Install packages in offline mode
-RUN mv /etc/apk/repositories /etc/apk/repositories.bak && \
-    touch /etc/apk/repositories && \
-    apk add --allow-untrusted --no-cache /tmp/*.apk && \
-    mv /etc/apk/repositories.bak /etc/apk/repositories && \
-    rm -f /tmp/*.apk
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.edge.kernel.org\/alpine/g' /etc/apk/repositories && \
+    apk add --no-cache \
+        bind-server \
+        bind-tools \
+        iputils \
+        curl \
+        nano \
+        msmtp \
+        heirloom-mailx 
 
 # Verify installations
 RUN bash --version && \
