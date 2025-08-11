@@ -1,21 +1,19 @@
-ARG ALPINE_MIRROR=mirror.math.princeton.edu/pub/alpinelinux
-ARG ALPINE_VERSION=v3.20
+FROM  nginx:stable-alpine
 
-FROM nginx:alpine
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.edge.kernel.org\/alpine/g' /etc/apk/repositories && \
+
+
+RUN apk update && \
     apk add --no-cache \
-        bind-server \
         bind-tools \
-        iputils \
         curl \
         nano \
         msmtp \
-        heirloom-mailx 
+        mailx
 
 # Verify installations
-RUN bash --version && \
-    curl --version && \
-    gettext --version
+#RUN bash --version && \
+#    curl --version && \
+#    gettext --version
 
 
 
@@ -39,7 +37,7 @@ RUN chmod +x /entrypoint.sh && \
 #RUN  rm /etc/nginx/sites-enabled/default && \
 #     ln -s /etc/nginx/sites-available/webmail.conf /etc/nginx/sites-enabled/
 # Remove default configuration
-RUN rm /etc/nginx/conf.d/default.conf
+#RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy your custom configuration
 COPY  nginx/webmail.conf /etc/nginx/conf.d/webmail.conf
