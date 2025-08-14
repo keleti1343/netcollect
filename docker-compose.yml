@@ -12,7 +12,6 @@ services:
     build: 
       context: .
       dockerfile: nginx/Dockerfile
-    container_name: fortinet-nginx
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -90,7 +89,6 @@ services:
   # FastAPI Backend Services (Load Balanced) - Dynamic Configuration
   fortinet-api-1:
     build: ./fortinet-api
-    container_name: fortinet-api-1
     dns:
       - 172.23.0.10
     environment:
@@ -148,7 +146,6 @@ services:
 
   fortinet-api-2:
     build: ./fortinet-api
-    container_name: fortinet-api-2
     dns:
       - 172.23.0.10
     environment:
@@ -207,7 +204,6 @@ services:
   # Next.js Frontend Services (Load Balanced) - Dynamic Configuration
   fortinet-web-1:
     build: ./fortinet-web
-    container_name: fortinet-web-1
     dns:
       - 172.23.0.10
     environment:
@@ -267,7 +263,6 @@ services:
 
   fortinet-web-2:
     build: ./fortinet-web
-    container_name: fortinet-web-2
     dns:
       - 172.23.0.10
     environment:
@@ -328,7 +323,6 @@ services:
   # Database Service - Dynamic Configuration
   postgres-db:
     build: ./postgres-db
-    container_name: postgres-db
     dns:
       - 172.23.0.10
     environment:
@@ -367,7 +361,6 @@ services:
   # Redis Cache Service - Dynamic Configuration
   redis:
     build: ./redis
-    container_name: fortinet-redis
     dns:
       - 172.23.0.10
     environment:
@@ -401,7 +394,6 @@ services:
   # Load Testing Service - Dynamic Configuration
   fortinet-testloader:
     build: ./testloader
-    container_name: fortinet-testloader
     dns:
       - 172.23.0.10
     environment:
@@ -421,7 +413,6 @@ services:
   # Database Management Service - Dynamic Configuration
   fortinet-db-manage:
     build: ./postgres-db
-    container_name: fortinet-db-manager
     dns:
       - 172.23.0.10
     ports:
@@ -447,12 +438,14 @@ services:
 
 networks:
   frontend-network:
+    name: frontend-network
     driver: bridge
     ipam:
       config:
         - subnet: 172.24.0.0/16
           gateway: 172.24.0.1
   backend-network:
+    name: backend-network
     driver: bridge
     ipam:
       config:
@@ -461,8 +454,8 @@ networks:
 
 volumes:
   postgres-data:
-    name: fortinet-postgres-data
+    name: postgres-data
   redis-data:
-    name: fortinet-redis-data
+    name: redis-data
   nginx-logs:
-    name: fortinet-nginx-logs
+    name: nginx-logs

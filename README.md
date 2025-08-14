@@ -25,7 +25,7 @@ A containerized, load-balanced deployment of the Fortinet Network Collector appl
     └────┬────┘
          │
 ┌────────▼────────┐
-│   PostgreSQL    │ ← Supabase Database
+│   PostgreSQL    │ ← Postgres Database
 │   Redis Cache   │
 └─────────────────┘
 ```
