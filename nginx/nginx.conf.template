@@ -61,7 +61,7 @@ http {
     geo $internal_network {
         default 0;
         172.20.0.0/16 1;  # Frontend network
-        172.21.0.0/16 1;  # Backend network
+        172.23.0.0/16 1;  # Backend network
         172.16.0.0/12 1;  # Docker default networks (fallback)
         192.168.0.0/16 1; # Docker custom networks
         10.0.0.0/8 1;     # Docker custom networks

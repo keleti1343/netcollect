@@ -92,7 +92,7 @@ services:
     build: ./fortinet-api
     container_name: fortinet-api-1
     dns:
-      - 172.21.0.10
+      - 172.23.0.10
     environment:
       # Database and Redis connections
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
@@ -129,7 +129,7 @@ services:
       - redis
     networks:
        backend-network:
-        ipv4_address: 172.21.0.7
+        ipv4_address: 172.23.0.7
     restart: unless-stopped
     deploy:
       resources:
@@ -150,7 +150,7 @@ services:
     build: ./fortinet-api
     container_name: fortinet-api-2
     dns:
-      - 172.21.0.10
+      - 172.23.0.10
     environment:
       # Database and Redis connections
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/${POSTGRES_DB}
@@ -187,7 +187,7 @@ services:
       - redis
     networks:
        backend-network:
-          ipv4_address: 172.21.0.8
+          ipv4_address: 172.23.0.8
     restart: unless-stopped
     deploy:
       resources:
@@ -209,7 +209,7 @@ services:
     build: ./fortinet-web
     container_name: fortinet-web-1
     dns:
-      - 172.21.0.10
+      - 172.23.0.10
     environment:
       # Basic Next.js configuration
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://fortinet-nginx/api}
@@ -248,7 +248,7 @@ services:
       - fortinet-api-2
     networks:
      backend-network:
-       ipv4_address: 172.21.0.3
+       ipv4_address: 172.23.0.3
     restart: unless-stopped
     deploy:
       resources:
@@ -269,7 +269,7 @@ services:
     build: ./fortinet-web
     container_name: fortinet-web-2
     dns:
-      - 172.21.0.10
+      - 172.23.0.10
     environment:
       # Basic Next.js configuration
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://fortinet-nginx/api}
@@ -308,7 +308,7 @@ services:
       - fortinet-api-2
     networks:
       backend-network:
-        ipv4_address: 172.21.0.4
+        ipv4_address: 172.23.0.4
     restart: unless-stopped
     deploy:
       resources:
@@ -330,7 +330,7 @@ services:
     build: ./postgres-db
     container_name: postgres-db
     dns:
-      - 172.21.0.10
+      - 172.23.0.10
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=postgres
@@ -347,7 +347,7 @@ services:
       - ./postgres-db/exports:/exports
     networks:
        backend-network:
-          ipv4_address: 172.21.0.11
+          ipv4_address: 172.23.0.11
     restart: unless-stopped
     deploy:
       resources:
@@ -369,7 +369,7 @@ services:
     build: ./redis
     container_name: fortinet-redis
     dns:
-      - 172.21.0.10
+      - 172.23.0.10
     environment:
       # Redis Configuration
       - REDIS_MAXMEMORY=${REDIS_MAXMEMORY:-400M}
@@ -381,7 +381,7 @@ services:
       - redis-data:/data
     networks:
        backend-network:
-          ipv4_address: 172.21.0.15
+          ipv4_address: 172.23.0.15
     restart: unless-stopped
     deploy:
       resources:
@@ -403,7 +403,7 @@ services:
     build: ./testloader
     container_name: fortinet-testloader
     dns:
-      - 172.21.0.10
+      - 172.23.0.10
     environment:
       - TARGET_URL=http://fortinet-nginx
       - LOAD_TEST_CONCURRENCY=${LOAD_TEST_CONCURRENCY:-10}
@@ -413,7 +413,7 @@ services:
       - fortinet-nginx
     networks:
        backend-network:
-          ipv4_address: 172.21.0.17
+          ipv4_address: 172.23.0.17
     profiles:
       - testing
     command: ["sleep", "infinity"]
@@ -423,7 +423,7 @@ services:
     build: ./postgres-db
     container_name: fortinet-db-manager
     dns:
-      - 172.21.0.10
+      - 172.23.0.10
     ports:
       - "${DB_MANAGER_PORT:-5433}:5432"
     environment:
@@ -438,7 +438,7 @@ services:
       - ./postgres-db/exports:/exports
     networks:
        backend-network:
-         ipv4_address: 172.21.0.18
+         ipv4_address: 172.23.0.18
     depends_on:
       - postgres-db
     profiles:
@@ -450,14 +450,14 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
+        - subnet: 172.24.0.0/16
+          gateway: 172.24.0.1
   backend-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.23.0.0/16
+          gateway: 172.23.0.1
 
 volumes:
   postgres-data:

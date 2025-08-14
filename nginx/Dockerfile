@@ -40,7 +40,7 @@ RUN chmod +x /entrypoint.sh && \
 #RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy your custom configuration
-COPY  nginx/webmail.conf /etc/nginx/conf.d/webmail.conf
+# COPY  nginx/webmail.conf /etc/nginx/conf.d/webmail.conf
      
 # Health check and expose
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

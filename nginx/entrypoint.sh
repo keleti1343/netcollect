@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # ============================================================================
@@ -20,7 +20,7 @@ echo ""
 # Standard Nginx directories in Alpine Linux
 NGINX_CONF_DIR="/etc/nginx"
 NGINX_CONF_D_DIR="/etc/nginx/conf.d"
-NGINX_TEMPLATES_DIR="/etc/nginx/templates"
+NGINX_TEMPLATES_DIR="/etc/nginx"
 
 # ============================================================================
 # CONFIGURATION VALIDATION AND LOGGING
@@ -257,7 +257,7 @@ envsubst '
     ${NGINX_HOST}
     ${ALLOWED_DOMAINS}
     ${ALLOWED_DOMAINS_MAP}
-' < "$NGINX_TEMPLATES_DIR/default.conf.template" > "$NGINX_CONF_D_DIR/default.conf"
+' < "$NGINX_CONF_D_DIR/default.conf.template" > "$NGINX_CONF_D_DIR/default.conf"
 
 if [ $? -eq 0 ]; then
     echo "✅ default.conf generated successfully"
@@ -268,7 +268,7 @@ fi
 
 # Copy static webmail configuration
 echo "📝 Copying static webmail.conf configuration..."
-cp "$NGINX_TEMPLATES_DIR/webmail.conf" "$NGINX_CONF_D_DIR/webmail.conf"
+cp "$NGINX_CONF_D_DIR/webmail.conf" "$NGINX_CONF_D_DIR/webmail.conf" 2>/dev/null || echo "ℹ️  webmail.conf already exists in conf.d, skipping copy"
 
 # ============================================================================
 # NGINX CONFIGURATION TESTING
